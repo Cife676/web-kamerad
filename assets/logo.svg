@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="100%" height="100%">
+  <defs>
+    <linearGradient id="redGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ef4444" />
+      <stop offset="100%" stop-color="#dc2626" />
+    </linearGradient>
+    <linearGradient id="blackGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2a2d37" />
+      <stop offset="100%" stop-color="#111319" />
+    </linearGradient>
+  </defs>
+
+  <!-- Left Antler (Charcoal Black) -->
+  <path d="M 170 110 C 180 80 195 40 215 20 C 200 60 170 110 160 140 C 130 100 85 70 50 110 C 80 130 110 150 135 180 C 100 170 60 165 40 185 C 70 205 105 215 130 240 C 110 270 95 310 90 350 C 115 300 135 250 165 210 C 190 280 230 330 290 350 C 270 300 240 240 205 190 C 250 170 280 130 300 90 C 270 120 230 150 185 170 Z" fill="url(#blackGradient)"/>
+
+  <!-- Right Antler - Top Horn Accent (Crimson Red) -->
+  <path d="M 630 110 C 620 80 605 40 585 20 C 600 60 630 110 640 140 C 670 100 715 70 750 110 C 720 130 690 150 665 180 C 700 170 740 165 760 185 C 730 205 695 215 670 240 C 690 270 705 310 710 350 C 685 300 665 250 635 210 C 610 280 570 330 510 350 C 530 300 560 240 595 190 C 550 170 520 130 500 90 C 530 120 570 150 615 170 Z" fill="url(#blackGradient)"/>
+  <path d="M 630 110 C 620 80 605 40 585 20 C 600 60 630 110 640 140 C 670 100 715 70 750 110 C 720 130 690 150 665 180 Z" fill="url(#redGradient)"/>
+
+  <!-- KD Center Monogram Emblem -->
+  <!-- Letter K -->
+  <path d="M 215 340 C 260 330 330 280 395 245 L 340 300 C 370 350 410 410 435 480 C 400 450 350 400 310 360 L 255 410 C 280 450 305 480 350 515 C 310 500 270 470 240 430 C 210 390 195 360 180 330 Z" fill="url(#blackGradient)"/>
+  <!-- Middle Stem 'I' / Divider -->
+  <path d="M 420 280 L 445 280 L 445 520 L 420 520 Z" fill="url(#blackGradient)"/>
+  <!-- Letter D Curve -->
+  <path d="M 460 280 C 530 275 600 310 615 380 C 630 450 570 520 485 540 C 540 510 570 460 560 400 C 550 340 495 315 460 315 Z" fill="url(#blackGradient)"/>
+
+  <!-- Lower Red Pointer Triangle -->
+  <polygon points="400,565 440,610 480,565" fill="url(#redGradient)"/>
+
+  <!-- Brand Typography -->
+  <!-- KAMERAD Text -->
+  <text x="400" y="695" font-family="'Inter', 'Arial Black', sans-serif" font-weight="900" font-size="64" fill="#ffffff" letter-spacing="18" text-anchor="middle">KAMERAD</text>
+  
+  <!-- basecamp edition Script Text -->
+  <text x="400" y="750" font-family="'Brush Script MT', 'Caveat', 'Georgia', cursive" font-style="italic" font-weight="bold" font-size="48" fill="url(#redGradient)" letter-spacing="4" text-anchor="middle">basecamp edition</text>
+</svg>

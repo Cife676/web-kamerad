@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KAMERAD basecamp edition | Outdoor & Hiking Gear Rental</title>
+  <meta name="description" content="Official rental platform for KAMERAD basecamp edition. Rent high-performance 4-season tents, technical backpacks, sleeping gear, and expedition bundles with instant WhatsApp booking and Down Payment / COD options.">
+  
+  <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- Supabase JS Client SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <!-- Sticky Customer Brand Header -->
+  <header class="header-sticky">
+    <div class="nav-container">
+      <a href="#" class="brand-logo-link">
+        <img src="assets/logo.svg" alt="KAMERAD basecamp edition logo" class="brand-logo-img">
+        <div class="brand-title-group">
+          <span class="brand-name">KAMERAD</span>
+          <span class="brand-sub">basecamp edition</span>
+        </div>
+      </a>
+
+      <div class="nav-actions">
+        <!-- Language Switcher Toggle -->
+        <div class="lang-switcher">
+          <button class="lang-btn active" id="langBtnID" onclick="setLanguage('id')">🇲🇨 ID</button>
+          <button class="lang-btn" id="langBtnEN" onclick="setLanguage('en')">🇬🇧 EN</button>
+        </div>
+
+        <!-- Dynamic User Auth / Admin Buttons -->
+        <div id="navAuthContainer" style="display: flex; align-items: center; gap: 0.5rem;">
+          <!-- Populated by app.js -->
+        </div>
+
+        <button class="btn-icon" id="openCartBtn" aria-label="View Rental Cart">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+          </svg>
+          <span data-i18n="nav_cart">Keranjang</span>
+          <span class="cart-badge" id="cartBadgeCount">0</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Promo Alert Bar -->
+  <div class="promo-strip-banner">
+    <div class="promo-strip-text">
+      <span class="promo-badge-pill" data-i18n="promo_tag">PROMO SPESIAL</span>
+      <span data-i18n="promo_text">🔥 Diskon s/d 30% Paket Outdoor & Alat Gunung!</span>
+    </div>
+    <span style="font-size: 0.85rem; opacity: 0.9;" class="desktop-only" data-i18n="promo_sub">• Reservasi Online • DP atau COD di Basecamp</span>
+  </div>
+
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <div class="hero-text-block">
+        <div class="badge-tag">
+          <span class="pulse-dot"></span>
+          <span data-i18n="hero_tag">Rental Alat Gunung Resmi Basecamp</span>
+        </div>
+        <h1 class="hero-title">
+          <span data-i18n="hero_title_1">SIAPKAN PERLENGKAPAN</span> 
+          <span class="text-gradient-red" data-i18n="hero_title_accent">PUNCAK</span>
+        </h1>
+        <p class="hero-desc" data-i18n="hero_desc">
+          Perlengkapan mountaineering performa tinggi, tenda 4-season, sleeping bag down, dan kerir teknikal. Reservasi online dengan Down Payment atau COD saat Pengambilan di Basecamp.
+        </p>
+
+        <div class="hero-features-row">
+          <div class="hero-feat-chip">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            <span data-i18n="hero_chip_1">Kualitas Alat Teruji</span>
+          </div>
+          <div class="hero-feat-chip">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span data-i18n="hero_chip_2">COD Pengambilan H+1</span>
+          </div>
+          <div class="hero-feat-chip">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"></path></svg>
+            <span data-i18n="hero_chip_3">Konfirmasi WhatsApp Langsung</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Rental Selector Card -->
+      <div class="hero-search-card">
+        <div class="search-card-title">
+          <span style="font-weight: 800; font-size: 1.1rem; color: #fff;" data-i18n="search_dates_title">🗓️ Pilih Tanggal Sewa</span>
+          <span class="badge-tag" style="font-size: 0.7rem; padding: 2px 8px;" id="rentalDurationDaysLabel">2 Days</span>
+        </div>
+
+        <div class="date-inputs-grid">
+          <div class="input-field-wrapper">
+            <label for="startDateInput" data-i18n="pickup_date_label">Tanggal Ambil</label>
+            <input type="date" id="startDateInput" class="date-input">
+          </div>
+          <div class="input-field-wrapper">
+            <label for="endDateInput" data-i18n="return_date_label">Tanggal Kembali</label>
+            <input type="date" id="endDateInput" class="date-input">
+          </div>
+        </div>
+
+        <div class="search-input-group">
+          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          <input type="text" id="catalogSearchInput" class="search-input" placeholder="Cari alat (contoh: tenda 4 orang, kerir, kompor...)" data-i18n-placeholder="search_placeholder">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Equipment Catalog Section -->
+  <section class="catalog-section" id="catalogSection">
+    <div class="section-header">
+      <h2 class="section-title">
+        <span data-i18n="catalog_title">Peralatan & Promo Tersedia</span>
+        <span style="font-size: 0.9rem; color: var(--green-success); background: rgba(16, 185, 129, 0.1); padding: 4px 12px; border-radius: 99px; font-weight: 600;" id="liveStockIndicatorBadge" data-i18n="catalog_badge">
+          🟢 Stok Tersedia
+        </span>
+      </h2>
+      <p class="section-subtitle" data-i18n="catalog_subtitle">Harga sewa tertera untuk durasi paket 2 Hari (Base Rate) + biaya perpanjangan per 1 Hari berikutnya.</p>
+    </div>
+
+    <!-- Category Filter Tabs -->
+    <div class="filter-tabs-row">
+      <button class="filter-tab-btn active" data-category="all">
+        <span data-i18n="filter_all">Semua Alat</span>
+      </button>
+      <button class="filter-tab-btn promo-tab" data-category="promo">
+        <span data-i18n="filter_promo">🔥 Promo Spesial</span>
+      </button>
+      <button class="filter-tab-btn" data-category="tents">
+        <span data-i18n="filter_tents">⛺ Tenda & Selter</span>
+      </button>
+      <button class="filter-tab-btn" data-category="backpacks">
+        <span data-i18n="filter_backpacks">🎒 Kerir & Ransel</span>
+      </button>
+      <button class="filter-tab-btn" data-category="sleeping">
+        <span data-i18n="filter_sleeping">🌙 Sleeping Bag & Matras</span>
+      </button>
+      <button class="filter-tab-btn" data-category="stoves">
+        <span data-i18n="filter_stoves">🔥 Kompor & Alat Masak</span>
+      </button>
+      <button class="filter-tab-btn" data-category="lighting">
+        <span data-i18n="filter_lighting">💡 Senter & Elektronik</span>
+      </button>
+    </div>
+
+    <!-- Equipment Catalog Grid -->
+    <div class="equipment-grid" id="equipmentGrid">
+      <!-- Items dynamically populated via app.js -->
+    </div>
+  </section>
+
+  <!-- Workflow How It Works Card Section -->
+  <section style="background: var(--bg-surface); border-y: 1px solid var(--border-subtle); padding: 4rem 1.5rem;">
+    <div style="max-width: 1280px; margin: 0 auto;">
+      <div style="text-align: center; max-width: 700px; margin: 0 auto 3rem auto;">
+        <h2 style="font-size: 2.2rem; margin-bottom: 0.5rem;" data-i18n="workflow_title">Alur Pemesanan Basecamp Mudah</h2>
+        <p style="color: var(--text-muted);" data-i18n="workflow_subtitle">Proses sewa 3 langkah sederhana dengan konfirmasi pemesanan otomatis & pengiriman order via WhatsApp.</p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem;">
+        <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); padding: 2rem; border-radius: var(--radius-lg); position: relative;">
+          <div style="width: 44px; height: 44px; background: rgba(239, 68, 68, 0.15); color: var(--red-primary); font-weight: 900; font-size: 1.25rem; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; margin-bottom: 1.25rem;">1</div>
+          <h3 style="font-size: 1.2rem; margin-bottom: 0.5rem;" data-i18n="step_1_title">1. Pilih Alat & Promo</h3>
+          <p style="color: var(--text-muted); font-size: 0.9rem;" data-i18n="step_1_desc">Pilih peralatan sewa atau paket promo hemat. Tambahkan ke keranjang dan atur durasi sewa.</p>
+        </div>
+
+        <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); padding: 2rem; border-radius: var(--radius-lg); position: relative;">
+          <div style="width: 44px; height: 44px; background: rgba(239, 68, 68, 0.15); color: var(--red-primary); font-weight: 900; font-size: 1.25rem; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; margin-bottom: 1.25rem;">2</div>
+          <h3 style="font-size: 1.2rem; margin-bottom: 0.5rem;" data-i18n="step_2_title">2. Pilih DP atau COD</h3>
+          <p style="color: var(--text-muted); font-size: 0.9rem;" data-i18n="step_2_desc">Pilih Down Payment 30%/50% atau Cash On Delivery (COD). Catatan: Pengambilan COD di Basecamp H+1 minimal.</p>
+        </div>
+
+        <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); padding: 2rem; border-radius: var(--radius-lg); position: relative;">
+          <div style="width: 44px; height: 44px; background: rgba(239, 68, 68, 0.15); color: var(--red-primary); font-weight: 900; font-size: 1.25rem; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; margin-bottom: 1.25rem;">3</div>
+          <h3 style="font-size: 1.2rem; margin-bottom: 0.5rem;" data-i18n="step_3_title">3. Pesanan WhatsApp</h3>
+          <p style="color: var(--text-muted); font-size: 0.9rem;" data-i18n="step_3_desc">Pesanan diproses dan Anda langsung diarahkan ke WhatsApp Basecamp dengan rincian nota lengkap!</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Store Basecamp Info & Contact Section -->
+  <section class="info-section" style="margin-top: 4rem;">
+    <div class="info-card">
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <img src="assets/logo.svg" alt="KAMERAD logo" style="height: 36px; width: auto;">
+        <div>
+          <h3 style="font-size: 1.2rem;">KAMERAD Basecamp HQ</h3>
+          <span style="font-size: 0.8rem; color: var(--red-primary); font-weight: 700;">Basecamp Store & Pickup Point</span>
+        </div>
+      </div>
+
+      <p style="color: var(--text-muted); font-size: 0.92rem;">
+        Located at the foothill basecamp. Swing by for gear inspection, custom fitting consultations, and instant pickup for your booked rentals.
+      </p>
+
+      <div style="display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.9rem; color: var(--text-main);">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <svg width="18" height="18" fill="none" stroke="var(--red-primary)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+          <span>Basecamp Way No. 48, Summit Ridge Base, Trailhead Sector 1</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <svg width="18" height="18" fill="none" stroke="var(--red-primary)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <span>Store Hours: Mon – Sun (07:00 AM – 21:00 PM)</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <svg width="18" height="18" fill="none" stroke="var(--green-success)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+          <span>WhatsApp BC Support: +62 822-9931-8955</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Trail Condition Alert -->
+    <div class="info-card" style="background: rgba(239, 68, 68, 0.05); border-color: rgba(239, 68, 68, 0.25);">
+      <h3 style="font-size: 1.2rem; color: var(--red-primary); display: flex; align-items: center; gap: 0.5rem;">
+        <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        Basecamp Advisory & Policy
+      </h3>
+      <ul style="color: var(--text-muted); font-size: 0.9rem; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.6rem;">
+        <li><strong>Down Payment (DP):</strong> Locks your gear immediately for any date (including same-day pickup). Balance paid upon arrival.</li>
+        <li><strong>COD Pickups:</strong> Cash On Delivery pickups at Basecamp (BC) require booking at least <strong>1 day in advance</strong> (next-day pickup).</li>
+        <li><strong>Gear Quality:</strong> All equipment is cleaned, inspected, and tested prior to every rental release.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Clean Customer Footer -->
+  <footer style="border-top: 1px solid var(--border-subtle); padding: 2.5rem 1.5rem; text-align: center; color: var(--text-muted); font-size: 0.88rem; background: var(--bg-main);">
+    <div style="max-width: 1280px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <img src="assets/logo.svg" alt="KAMERAD logo" style="height: 28px; width: auto;">
+        <span style="font-family: var(--font-display); font-weight: 800; color: #fff; letter-spacing: 2px;">KAMERAD basecamp edition</span>
+      </div>
+      <p>© 2026 KAMERAD basecamp edition. All rights reserved. Built for extreme outdoor expeditions.</p>
+    </div>
+  </footer>
+
+  <!-- Slide-over Shopping Cart Drawer -->
+  <div class="cart-drawer-backdrop" id="cartBackdrop">
+    <div class="cart-drawer">
+      <div class="cart-header">
+        <div class="cart-title-row">
+          <svg width="22" height="22" fill="none" stroke="var(--red-primary)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+          <h3 style="font-size: 1.25rem;" data-i18n="cart_title">Keranjang Sewa Anda</h3>
+        </div>
+        <button class="btn-close" id="closeCartBtn" aria-label="Close Cart">
+          <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <div class="cart-body">
+        <!-- Rental Date Overview -->
+        <div class="cart-dates-card">
+          <div class="cart-dates-header">
+            <span data-i18n="cart_duration_header">📅 DURASI SEWA</span>
+            <span style="background: rgba(239, 68, 68, 0.2); color: #fff; padding: 2px 8px; border-radius: 4px; font-weight: 800;" id="rentalDurationDaysLabel">2 Days</span>
+          </div>
+          <p style="font-size: 0.8rem; color: var(--text-muted);">Dates are synced with your selector on top. Modify start/return dates as needed.</p>
+        </div>
+
+        <!-- Items List -->
+        <div class="cart-items-list" id="cartItemsList">
+          <!-- Populated by app.js -->
+        </div>
+
+        <!-- Payment Option Picker -->
+        <div class="payment-choice-box">
+          <span class="payment-choice-title" data-i18n="payment_method_title">💳 Pilih Metode Pembayaran</span>
+          <div class="payment-options-grid">
+            <label class="payment-radio-card selected" id="dpRadioCard">
+              <input type="radio" name="paymentOption" id="payMethodDP" value="dp" checked>
+              <span class="payment-opt-name" data-i18n="pay_dp_title">Down Payment</span>
+              <span class="payment-opt-sub" data-i18n="pay_dp_sub">Kunci booking dengan DP</span>
+            </label>
+
+            <label class="payment-radio-card" id="codRadioCard">
+              <input type="radio" name="paymentOption" id="payMethodCOD" value="cod">
+              <span class="payment-opt-name" data-i18n="pay_cod_title">Full COD</span>
+              <span class="payment-opt-sub" data-i18n="pay_cod_sub">Bayar di Basecamp</span>
+            </label>
+          </div>
+
+          <!-- DP Percentage Selector -->
+          <div id="dpPercentSelectorRow" style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.5rem;">
+            <span style="font-size: 0.82rem; color: var(--text-muted);" data-i18n="select_dp_label">Pilih Persentase DP:</span>
+            <select id="dpPercentSelect" style="background: var(--bg-main); color: #fff; border: 1px solid var(--border-subtle); border-radius: 4px; padding: 2px 6px; font-size: 0.85rem; font-weight: 700;">
+              <option value="50" selected>50% Down Payment</option>
+              <option value="30">30% Down Payment</option>
+            </select>
+          </div>
+
+          <!-- COD Warning Notice -->
+          <div class="cod-warning-box" id="codWarningNotice" style="display: none;">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            <div>
+              <strong data-i18n="cod_warning_title">Kebijakan COD:</strong> <span data-i18n="cod_warning_text">Pengambilan COD di Basecamp wajib dipesan minimal H+1 (esok hari).</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cart Footer -->
+      <div class="cart-footer">
+        <div class="summary-line">
+          <span data-i18n="summary_subtotal_label">Biaya Paket:</span>
+          <span id="summarySubtotal">Rp 0 / day</span>
+        </div>
+        <div class="summary-line total">
+          <span data-i18n="summary_grand_total_label">Total Biaya Sewa:</span>
+          <span id="summaryGrandTotal" style="color: var(--red-primary);">Rp 0</span>
+        </div>
+        <div class="summary-line" id="summaryDPAmountRow">
+          <span data-i18n="summary_dp_required_label">Down Payment (DP) Wajib:</span>
+          <span style="font-weight: 700; color: var(--green-success);">Rp 0 (50%)</span>
+        </div>
+        <div class="summary-line" id="summaryBalanceRow">
+          <span data-i18n="summary_balance_label">Sisa Bayar saat Pengambilan:</span>
+          <span style="font-weight: 700; color: #fff;">Rp 0</span>
+        </div>
+
+        <button class="btn-primary" style="width: 100%; padding: 0.9rem; font-size: 1rem; margin-top: 0.5rem;" onclick="openCheckoutModal()">
+          <span data-i18n="btn_proceed_checkout">Lanjut ke Checkout</span>
+          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Multi-Step Checkout Modal -->
+  <div class="modal-backdrop" id="checkoutModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 style="font-size: 1.2rem; display: flex; align-items: center; gap: 0.5rem;">
+          <svg width="20" height="20" fill="none" stroke="var(--red-primary)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <span data-i18n="checkout_title">Lengkapi Pesanan Basecamp</span>
+        </h3>
+        <button class="btn-close" onclick="closeCheckoutModal()">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <form onsubmit="submitOrderAndOpenWhatsApp(event)">
+        <div class="modal-body">
+          <div class="input-field-wrapper">
+            <label for="custNameInput" data-i18n="label_fullname">Nama Lengkap Penyewa *</label>
+            <input type="text" id="custNameInput" class="search-input" style="padding-left: 1rem;" placeholder="e.g. Alex Harrison" required>
+          </div>
+
+          <div class="input-field-wrapper">
+            <label for="custPhoneInput" data-i18n="label_phone">Nomor WhatsApp *</label>
+            <input type="tel" id="custPhoneInput" class="search-input" style="padding-left: 1rem;" placeholder="e.g. 082299318955" required>
+          </div>
+
+          <div class="input-field-wrapper">
+            <label for="custNotesInput" data-i18n="label_notes">Catatan Tambahan / Gunung Tujuan (Opsional)</label>
+            <textarea id="custNotesInput" class="search-input" style="padding-left: 1rem; min-height: 70px; font-family: var(--font-body);" placeholder="e.g. Pendakian via jalur utara, pengambilan jam 8 pagi"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeCheckoutModal()" data-i18n="btn_back_to_cart">Kembali ke Keranjang</button>
+          <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);">
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-1.154 4.22 4.22-1.107z"/></svg>
+            <span data-i18n="btn_submit_wa">Kirim & Pesan via WhatsApp</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Customer Auth Modal (Login / Register) -->
+  <div class="modal-backdrop" id="customerAuthModal">
+    <div class="modal-card" style="max-width: 480px;">
+      <div class="modal-header">
+        <div style="display: flex; gap: 0.5rem;" id="authTabHeader">
+          <button class="filter-tab-btn active" id="tabCustomerLoginBtn" onclick="switchAuthTab('login')">Masuk (Login)</button>
+          <button class="filter-tab-btn" id="tabCustomerRegisterBtn" onclick="switchAuthTab('register')">Daftar (Register)</button>
+        </div>
+        <button class="btn-close" onclick="closeAuthModal()">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <!-- Login Form -->
+      <form id="customerLoginForm" onsubmit="handleCustomerLogin(event)">
+        <div class="modal-body">
+          <div class="input-field-wrapper">
+            <label for="loginEmailInput">Email *</label>
+            <input type="email" id="loginEmailInput" class="search-input" style="padding-left: 1rem;" placeholder="name@example.com" required>
+          </div>
+          <div class="input-field-wrapper">
+            <label for="loginPasswordInput">Password *</label>
+            <input type="password" id="loginPasswordInput" class="search-input" style="padding-left: 1rem;" placeholder="••••••••" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeAuthModal()">Batal</button>
+          <button type="submit" class="btn-primary">Masuk Akun</button>
+        </div>
+      </form>
+
+      <!-- Register Form -->
+      <form id="customerRegisterForm" onsubmit="handleCustomerRegister(event)" style="display: none;">
+        <div class="modal-body">
+          <div class="input-field-wrapper">
+            <label for="regNameInput">Nama Lengkap *</label>
+            <input type="text" id="regNameInput" class="search-input" style="padding-left: 1rem;" placeholder="Alex Harrison" required>
+          </div>
+          <div class="input-field-wrapper">
+            <label for="regPhoneInput">Nomor WhatsApp *</label>
+            <input type="tel" id="regPhoneInput" class="search-input" style="padding-left: 1rem;" placeholder="082299318955" required>
+          </div>
+          <div class="input-field-wrapper">
+            <label for="regEmailInput">Email *</label>
+            <input type="email" id="regEmailInput" class="search-input" style="padding-left: 1rem;" placeholder="name@example.com" required>
+          </div>
+          <div class="input-field-wrapper">
+            <label for="regPasswordInput">Password *</label>
+            <input type="password" id="regPasswordInput" class="search-input" style="padding-left: 1rem;" placeholder="••••••••" minlength="6" required>
+          </div>
+          <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); padding: 0.75rem; border-radius: var(--radius-sm); font-size: 0.8rem; color: #6ee7b7;">
+            📧 Link konfirmasi verifikasi email akan dikirim otomatis ke alamat email Anda.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeAuthModal()">Batal</button>
+          <button type="submit" class="btn-primary">Daftar Akun Baru</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Customer Bookings History Modal -->
+  <div class="modal-backdrop" id="customerBookingsModal">
+    <div class="modal-card" style="max-width: 800px;">
+      <div class="modal-header">
+        <h3 style="font-size: 1.2rem; display: flex; align-items: center; gap: 0.5rem;">
+          <svg width="20" height="20" fill="none" stroke="var(--red-primary)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+          Riwayat Booking Sewa Saya
+        </h3>
+        <button class="btn-close" onclick="closeCustomerBookingsModal()">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+      <div class="modal-body" id="customerBookingsListBody">
+        <!-- Dynamic Bookings list -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Staff & Admin Dashboard Modal (Username: Kamerad | Password: KameradAdmin123) -->
+  <div class="modal-backdrop" id="adminDashboardModal">
+    <div class="modal-card" style="max-width: 950px;">
+      <div class="modal-header">
+        <h3 style="font-size: 1.2rem; color: var(--red-primary); display: flex; align-items: center; gap: 0.5rem;">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+          Staff & Admin Control Panel - KAMERAD
+        </h3>
+        <button class="btn-close" onclick="closeAdminDashboardModal()">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <!-- Admin Login Form -->
+      <form id="adminLoginForm" onsubmit="handleAdminLogin(event)">
+        <div class="modal-body" style="max-width: 420px; margin: 0 auto; width: 100%;">
+          <div style="text-align: center; margin-bottom: 1rem;">
+            <img src="assets/logo.svg" alt="KAMERAD logo" style="height: 48px; width: auto; margin-bottom: 0.5rem;">
+            <h4 style="font-size: 1.1rem;">Masuk Portal Admin KAMERAD</h4>
+            <p style="font-size: 0.82rem; color: var(--text-muted);">Khusus pengelola & staff toko rental</p>
+          </div>
+
+          <div class="input-field-wrapper">
+            <label for="adminUsernameInput">Username *</label>
+            <input type="text" id="adminUsernameInput" class="search-input" style="padding-left: 1rem;" placeholder="Username Admin" required>
+          </div>
+
+          <div class="input-field-wrapper">
+            <label for="adminPasswordInput">Password *</label>
+            <input type="password" id="adminPasswordInput" class="search-input" style="padding-left: 1rem;" placeholder="Password Admin" required>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="justify-content: center;">
+          <button type="submit" class="btn-primary" style="min-width: 180px;">Masuk Admin</button>
+        </div>
+      </form>
+
+      <!-- Admin Dashboard View -->
+      <div id="adminDashboardView" style="display: none;" class="modal-body">
+        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.75rem;">
+          <div>
+            <h4 style="font-size: 1.1rem; color: #fff;">📋 Manajemen Booking & Stok</h4>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Kelola konfirmasi pesanan sewa dan penyesuaian stok otomatis.</span>
+          </div>
+          <button class="btn-secondary" onclick="fetchAdminBookingsAndStock()" style="padding: 0.4rem 0.85rem; font-size: 0.82rem;">
+            🔄 Refresh Data
+          </button>
+        </div>
+
+        <!-- Filter Status Buttons -->
+        <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+          <button class="filter-tab-btn active" id="btnFilterAllBookings" onclick="filterAdminBookings('ALL')">Semua Order</button>
+          <button class="filter-tab-btn" id="btnFilterPendingBookings" onclick="filterAdminBookings('PENDING')">⏳ Menunggu (PENDING)</button>
+          <button class="filter-tab-btn" id="btnFilterConfirmedBookings" onclick="filterAdminBookings('CONFIRMED')">✅ Dikonfirmasi</button>
+          <button class="filter-tab-btn" id="btnFilterCancelledBookings" onclick="filterAdminBookings('CANCELLED')">❌ Dibatalkan</button>
+        </div>
+
+        <!-- Bookings Table -->
+        <div style="overflow-x: auto; max-height: 300px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); margin-top: 0.75rem;">
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem; color: #fff;">
+            <thead style="background: var(--bg-card); border-bottom: 1px solid var(--border-subtle); position: sticky; top: 0; z-index: 5;">
+              <tr>
+                <th style="padding: 0.75rem;">Order ID</th>
+                <th style="padding: 0.75rem;">Penyewa</th>
+                <th style="padding: 0.75rem;">Tanggal Sewa</th>
+                <th style="padding: 0.75rem;">Metode & Total</th>
+                <th style="padding: 0.75rem;">Status</th>
+                <th style="padding: 0.75rem; text-align: right;">Aksi Admin</th>
+              </tr>
+            </thead>
+            <tbody id="adminBookingsTableBody">
+              <!-- Dynamic Rows -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick View Gear Specs Modal -->
+  <div class="modal-backdrop" id="quickViewModal">
+    <div class="modal-card" style="max-width: 680px;">
+      <div class="modal-header">
+        <h3 style="font-size: 1.1rem;">Gear Specifications & Overview</h3>
+        <button class="btn-close" onclick="closeQuickView()">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+      <div class="modal-body" id="quickViewModalBody">
+        <!-- Populated via app.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

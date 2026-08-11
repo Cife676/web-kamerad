@@ -1,0 +1,11 @@
+# Local environment files
+.env
+.env.local
+.DS_Store
+
+# Temporary server scripts
+server.ps1
+
+# Node modules / build output
+node_modules/
+.vercel/
