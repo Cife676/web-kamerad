@@ -462,10 +462,10 @@ function renderNavAuthButtons() {
   if (isAdminLoggedIn) {
     container.innerHTML = `
       <button class="btn-icon" style="background: rgba(239, 68, 68, 0.15); border-color: var(--red-primary); color: #fca5a5;" onclick="openAdminDashboardModal()">
-        🛡️ Portal Staff
+        🛡️ Staff
       </button>
-      <button class="btn-icon" onclick="handleAdminLogout()" style="padding: 0.6rem 0.75rem;">
-        🚪 Keluar
+      <button class="btn-icon" onclick="handleAdminLogout()" style="padding: 0.5rem 0.6rem;">
+        🚪
       </button>
     `;
   } else if (currentCustomer) {
@@ -473,17 +473,14 @@ function renderNavAuthButtons() {
       <button class="btn-icon" onclick="openCustomerBookingsModal()">
         👤 ${currentCustomer.name.split(' ')[0]}
       </button>
-      <button class="btn-icon" onclick="handleCustomerLogout()" style="padding: 0.6rem 0.75rem;">
-        🚪 Keluar
+      <button class="btn-icon" onclick="handleCustomerLogout()" style="padding: 0.5rem 0.6rem;">
+        🚪
       </button>
     `;
   } else {
     container.innerHTML = `
       <button class="btn-icon" onclick="openAuthModal('login')">
-        🔑 ${currentLang === 'id' ? 'Masuk / Daftar' : 'Login / Register'}
-      </button>
-      <button class="btn-icon" onclick="openAdminDashboardModal()" title="Staff Portal" style="padding: 0.6rem;">
-        🛡️
+        🔑 ${currentLang === 'id' ? 'Masuk' : 'Login'}
       </button>
     `;
   }
