@@ -1,4 +1,4 @@
-/* KAMERAD basecamp edition - Application, Auth, i18n & 3-Line Mobile Menu Logic */
+/* KAMERAD DAJA - Application, Auth, i18n & 3D Coverflow Carousel Logic */
 
 // ============================================================
 // SUPABASE CONFIGURATION
@@ -18,10 +18,16 @@ const ADMIN_PASSWORD_CRED = 'KameradAdmin123';
 const TRANSLATIONS = {
   id: {
     nav_cart: 'Keranjang',
+    nav_home: 'Home',
     nav_rental_equipment: 'Rental Equipment',
     nav_for_sale: 'For Sale',
     nav_laundry_service: 'Laundry Service',
     nav_account: 'Akun Saya / Login',
+    home_title: 'KAMERAD DAJA — WALK WITHIN WILD',
+    home_short_brief: 'Platform resmi petualangan outdoor, ekspedisi pendakian gunung, penyewaan alat mountaineering (Basecamp Edition), toko peralatan baru, dan layanan perawatan alat bekas pakai.',
+    card_1_desc: 'Temukan dan sewa semua kebutuhan peralatan & perlengkapan pendakian Anda.',
+    card_2_desc: 'Bergabung dalam trip alam seru bersama tim pendaki berpengalaman kami.',
+    card_3_desc: 'Layanan cuci profesional, perawatan bulu angsa, waterproofing, dan perbaikan alat.',
     for_sale_subtitle: 'Beli peralatan pendakian original baru dan aksesoris siap pakai untuk kebutuhan ekspedisi Anda.',
     laundry_subtitle: 'Layanan cuci profesional, perawatan bulu angsa, waterproofing, dan sterilisasi alat gunung.',
     promo_tag: 'PROMO SPESIAL',
@@ -56,14 +62,6 @@ const TRANSLATIONS = {
     stock_no_stock: 'STOK HABIS',
     rate_unit_base: '/ 2 Hari',
     rate_unit_extra: '/ hari tambahan',
-    workflow_title: 'Alur Pemesanan Basecamp Mudah',
-    workflow_subtitle: 'Proses sewa 3 langkah sederhana dengan konfirmasi pemesanan otomatis & pengiriman order via WhatsApp.',
-    step_1_title: '1. Pilih Alat & Promo',
-    step_1_desc: 'Pilih peralatan sewa atau paket promo hemat. Tambahkan ke keranjang dan atur durasi sewa.',
-    step_2_title: '2. Pilih DP atau COD',
-    step_2_desc: 'Pilih Down Payment 30%/50% atau Cash On Delivery (COD). Catatan: Pengambilan COD di Basecamp H+1 minimal.',
-    step_3_title: '3. Pesanan WhatsApp',
-    step_3_desc: 'Pesanan diproses dan Anda langsung diarahkan ke WhatsApp Basecamp dengan rincian nota lengkap!',
     cart_title: 'Keranjang Sewa Anda',
     cart_duration_header: '📅 DURASI SEWA',
     payment_method_title: '💳 Pilih Metode Pembayaran',
@@ -90,10 +88,16 @@ const TRANSLATIONS = {
   },
   en: {
     nav_cart: 'Cart',
+    nav_home: 'Home',
     nav_rental_equipment: 'Rental Equipment',
     nav_for_sale: 'For Sale',
     nav_laundry_service: 'Laundry Service',
     nav_account: 'My Account / Login',
+    home_title: 'KAMERAD DAJA — WALK WITHIN WILD',
+    home_short_brief: 'Official platform for outdoor adventures, mountain expedition trips, mountaineering gear rental (Basecamp Edition), retail gear store, and after adventure gear care services.',
+    card_1_desc: 'Find and rent out your need of equipment and supplies for adventures',
+    card_2_desc: 'Join adventurous nature trip together with our experienced teams',
+    card_3_desc: 'Professional gear washing, down care, waterproofing, and repair',
     for_sale_subtitle: 'Buy brand new original trekking gear and ready-to-use accessories for your expedition.',
     laundry_subtitle: 'Professional gear wash, down care, waterproofing, and sterilization for post-trek outdoor gear.',
     promo_tag: 'SPECIAL PROMO',
@@ -128,14 +132,6 @@ const TRANSLATIONS = {
     stock_no_stock: 'OUT OF STOCK',
     rate_unit_base: '/ 2 Days',
     rate_unit_extra: '/ extra day',
-    workflow_title: 'Seamless Basecamp Order Workflow',
-    workflow_subtitle: 'Simple 3-step rental process with automatic booking confirmation & instant WhatsApp order dispatch.',
-    step_1_title: '1. Select Items & Promos',
-    step_1_desc: 'Browse available rental items and discounted promo packs. Add your gear to the rental cart and adjust rental duration.',
-    step_2_title: '2. Choose DP or Full COD',
-    step_2_desc: 'Opt for 30%/50% Down Payment or Full Cash On Delivery (COD). Note: COD pickups at Basecamp must be scheduled for the following day minimum.',
-    step_3_title: '3. Instant WhatsApp Order',
-    step_3_desc: 'Your order is processed instantly and you are redirected straight to Basecamp WhatsApp with a pre-filled itemized receipt!',
     cart_title: 'Your Rental Cart',
     cart_duration_header: '📅 RENTAL DURATION',
     payment_method_title: '💳 Choose Payment Method',
@@ -169,10 +165,13 @@ let currentLang = localStorage.getItem('kmrd_lang') || 'id';
 let currentCustomer = JSON.parse(localStorage.getItem('kmrd_customer_session') || 'null');
 let isAdminLoggedIn = sessionStorage.getItem('kmrd_admin_session') === 'true';
 
-// Local Bookings Storage (Backup)
+// Local Bookings Storage
 let localBookings = JSON.parse(localStorage.getItem('kmrd_local_bookings') || '[]');
 
-// Gear Database with Promos & IDR Rupiah Rates (Base 2-Days + Extra Day Extension)
+// Carousel Active Card Index (1 = Walk With Kamerad is center)
+let activeCarouselIndex = 1;
+
+// Gear Database
 let GEAR_CATALOG = [
   {
     id: 'kmrd-t1',
@@ -187,8 +186,8 @@ let GEAR_CATALOG = [
     specs: ['4 Person', 'Geodesic Alloy Frame', '10,000mm Waterproof', 'Snow Skirt'],
     specs_id: ['4 Kapasitas', 'Frame Alloy Geodesic', '10.000mm Waterproof', 'Snow Skirt'],
     image: 'assets/tent_4season.jpg',
-    description: 'Stormproof 4-person geodesic tent built to withstand extreme mountain ridge winds and heavy snow loading.',
-    description_id: 'Tenda geodesic 4-person tahan badai yang dirancang khusus menerjang angin kencang dan cuaca ekstrem pegunungan.',
+    description: 'Stormproof 4-person geodesic tent built to withstand extreme mountain ridge winds.',
+    description_id: 'Tenda geodesic 4-person tahan badai yang dirancang khusus menerjang angin kencang.',
     stock: 12,
     weight: '3.4 kg'
   },
@@ -206,8 +205,8 @@ let GEAR_CATALOG = [
     specs: ['Complete 2-Person Kit', '4-Season Geodesic Tent', '65L Technical Pack', '0°C Down Bags x2'],
     specs_id: ['Paket Lengkap 2 Orang', 'Tenda 4-Season Geodesic', 'Kerir 65L Teknikal', 'Sleeping Bag Bulu Angsa x2'],
     image: 'assets/hero_banner.jpg',
-    description: 'The ultimate basecamp combo. Everything 2 adventurers need for high alpine trekking at a discounted promo rate.',
-    description_id: 'Paket sewa lengkap hemat untuk 2 pendaki. Semua kebutuhan pendakian gunung dalam satu paket hemat.',
+    description: 'The ultimate basecamp combo for 2 adventurers.',
+    description_id: 'Paket sewa lengkap hemat untuk 2 pendaki.',
     stock: 5,
     weight: '7.2 kg total'
   },
@@ -226,7 +225,7 @@ let GEAR_CATALOG = [
     specs_id: ['Paket Solo Trekker', 'Tenda Ringan 1P', 'Kompor Lapangan Windproof'],
     image: 'assets/tent_4season.jpg',
     description: 'Lightweight solo setup designed for fast weekend summit pushes.',
-    description_id: 'Set sewa ringkas ultra-light untuk pendakian solo akhir pekan yang cepat dan efisien.',
+    description_id: 'Set sewa ringkas ultra-light untuk pendakian solo akhir pekan.',
     stock: 8,
     weight: '3.1 kg total'
   },
@@ -243,8 +242,8 @@ let GEAR_CATALOG = [
     specs: ['2 Person', 'Freestanding', '3-Season', 'Double Vestibule'],
     specs_id: ['2 Kapasitas', 'Freestanding', '3-Season', 'Teras Ganda'],
     image: 'assets/tent_4season.jpg',
-    description: 'Quick pitch 3-season tent with dual entry vestibules for gear storage.',
-    description_id: 'Tenda 3-season cepat pasang dengan teras ganda untuk penyimpanan barang bawaan.',
+    description: 'Quick pitch 3-season tent with dual entry vestibules.',
+    description_id: 'Tenda 3-season cepat pasang dengan teras ganda.',
     stock: 15,
     weight: '1.9 kg'
   },
@@ -258,31 +257,13 @@ let GEAR_CATALOG = [
     originalPrice: null,
     isPromo: false,
     promoTag: null,
-    specs: ['65L Capacity', 'Adjustable Spine Harness', 'Integrated Rain Cover', 'Trek Pole Mounts'],
-    specs_id: ['Kapasitas 65 Liter', 'Busa Punggung Ergo', 'Jas Hujan Kerir', 'Gantungan Tracking Pole'],
+    specs: ['65L Capacity', 'Adjustable Spine Harness', 'Integrated Rain Cover'],
+    specs_id: ['Kapasitas 65 Liter', 'Busa Punggung Ergo', 'Jas Hujan Kerir'],
     image: 'assets/hero_banner.jpg',
-    description: 'Heavy load carrier with ergo-fit hipbelt and quick hydration sleeve access.',
-    description_id: 'Kerir beban berat dengan hipbelt ergonomis dan kompartemen water bladder.',
+    description: 'Heavy load carrier with ergo-fit hipbelt.',
+    description_id: 'Kerir beban berat dengan hipbelt ergonomis.',
     stock: 10,
     weight: '2.1 kg'
-  },
-  {
-    id: 'kmrd-b2',
-    name: 'KAMERAD Ridge 45L Alpine Pack',
-    name_id: 'Ransel KAMERAD Ridge 45L Alpine',
-    category: 'backpacks',
-    priceBase2Days: 25000,
-    priceExtraDay: 10000,
-    originalPrice: null,
-    isPromo: false,
-    promoTag: null,
-    specs: ['45L Capacity', 'Ice Axe Loops', 'Waterproof Cordura Fabric'],
-    specs_id: ['Kapasitas 45 Liter', 'Pengait Es/Trekking', 'Bahan Cordura Waterproof'],
-    image: 'assets/hero_banner.jpg',
-    description: 'Streamlined alpine pack engineered for technical ascents.',
-    description_id: 'Ransel alpine teknikal yang ramah untuk perjalanan mendaki cepat.',
-    stock: 14,
-    weight: '1.4 kg'
   },
   {
     id: 'kmrd-s1',
@@ -294,67 +275,13 @@ let GEAR_CATALOG = [
     originalPrice: null,
     isPromo: false,
     promoTag: null,
-    specs: ['800 Fill Goose Down', '-5°C Comfort Rating', 'Compression Sack Included'],
-    specs_id: ['Bulu Angsa 800 Fill', 'Suhu Nyaman -5°C', 'Kantong Kompresi Included'],
+    specs: ['800 Fill Goose Down', '-5°C Comfort Rating', 'Compression Sack'],
+    specs_id: ['Bulu Angsa 800 Fill', 'Suhu Nyaman -5°C', 'Kantong Kompresi'],
     image: 'assets/hero_banner.jpg',
-    description: 'Plush sub-zero down mummy sleeping bag for high altitude basecamps.',
-    description_id: 'Sleeping bag hangat tipe mummy berbahan bulu angsa untuk suhu ekstrem puncak.',
+    description: 'Plush sub-zero down mummy sleeping bag.',
+    description_id: 'Sleeping bag hangat tipe mummy berbahan bulu angsa.',
     stock: 20,
     weight: '980 g'
-  },
-  {
-    id: 'kmrd-s2',
-    name: 'KAMERAD ThermoCell Insulated Air Pad',
-    name_id: 'Matras Angin KAMERAD ThermoCell Insulated',
-    category: 'sleeping',
-    priceBase2Days: 15000,
-    priceExtraDay: 5000,
-    originalPrice: null,
-    isPromo: false,
-    promoTag: null,
-    specs: ['R-Value 4.8', 'Quick Pump Sack', 'Puncture Resistant Nylon'],
-    specs_id: ['Insulasi R-Value 4.8', 'Pompa Kantong Praktis', 'Nylon Anti-Bocor'],
-    image: 'assets/tent_4season.jpg',
-    description: 'High insulation inflatable sleeping mat preventing ground cold thermal transfer.',
-    description_id: 'Matras angin tiup penahan dingin tanah dengan insulasi tinggi.',
-    stock: 25,
-    weight: '520 g'
-  },
-  {
-    id: 'kmrd-c1',
-    name: 'KAMERAD JetBoil Rapid Cooking System',
-    name_id: 'Kompor Lapangan KAMERAD JetBoil System',
-    category: 'stoves',
-    priceBase2Days: 15000,
-    priceExtraDay: 5000,
-    originalPrice: null,
-    isPromo: false,
-    promoTag: null,
-    specs: ['Boils 1L in 100s', 'Piezo Igniter', 'FluxRing Heat Exchanger'],
-    specs_id: ['Mendidih 1L dalam 100s', 'Pematik Otomatis', 'Ring Penahan Angin'],
-    image: 'assets/tent_4season.jpg',
-    description: 'Ultra efficient windproof stove burner with integrated cooking pot.',
-    description_id: 'Kompor lapangan efisien penahan angin dengan panci terintegrasi.',
-    stock: 18,
-    weight: '430 g'
-  },
-  {
-    id: 'kmrd-l1',
-    name: 'KAMERAD Beacon 900 Lumens Headlamp',
-    name_id: 'Senter Kepala KAMERAD Beacon 900 Lumens',
-    category: 'lighting',
-    priceBase2Days: 10000,
-    priceExtraDay: 5000,
-    originalPrice: null,
-    isPromo: false,
-    promoTag: null,
-    specs: ['900 Lumens', 'Rechargeable USB-C', 'IPX8 Waterproof', 'Red Night Vision'],
-    specs_id: ['Kecerahan 900 Lumens', 'Baterai USB-C', 'IPX8 Anti Air', 'Lampu Merah Malam'],
-    image: 'assets/hero_banner.jpg',
-    description: 'Long-range headlamp with wide flood and spot dual LED beams.',
-    description_id: 'Senter kepala jarak jauh dengan pencahayaan sorot dan menyebar.',
-    stock: 30,
-    weight: '110 g'
   }
 ];
 
@@ -384,17 +311,8 @@ const FOR_SALE_ITEMS = [
     name_id: 'Spray Waterproof Nikwax Fabric 300ml',
     price: 95000,
     image: 'assets/hero_banner.jpg',
-    specs: ['Restores DWR Layer', 'Water Repellent Spray for Tents & Jackets'],
-    specs_id: ['Mengembalikan Lapisan DWR', 'Cairan Anti Air Tenda & Jaket']
-  },
-  {
-    id: 'sale-4',
-    name: 'KAMERAD Waterproof Backpack Raincover 60L-80L',
-    name_id: 'Cover Bag Hujan KAMERAD 60L-80L',
-    price: 45000,
-    image: 'assets/tent_4season.jpg',
-    specs: ['210T Ripstop Nylon', 'Elastic Drawstring Fit', 'Reflective Logo'],
-    specs_id: ['Nylon Ripstop 210T', 'Tali Elastis Pas', 'Logo Reflektif Malam']
+    specs: ['Restores DWR Layer', 'Water Repellent Spray'],
+    specs_id: ['Mengembalikan Lapisan DWR', 'Cairan Anti Air Tenda']
   }
 ];
 
@@ -447,8 +365,8 @@ let rentalDates = {
 };
 
 let paymentSelection = {
-  method: 'dp', // 'dp' or 'cod'
-  dpPercent: 50 // 30 or 50
+  method: 'dp',
+  dpPercent: 50
 };
 
 // Initialize App
@@ -457,6 +375,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initSupabaseClient();
   setupDatePickers();
   renderNavAuthButtons();
+  renderCarousel();
   renderCatalog();
   renderForSaleCatalog();
   renderLaundryServices();
@@ -464,6 +383,60 @@ document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
   checkSecretAdminURL();
 });
+
+// 3D Coverflow Carousel Handlers
+function renderCarousel() {
+  const card0 = document.getElementById('carouselCard0');
+  const card1 = document.getElementById('carouselCard1');
+  const card2 = document.getElementById('carouselCard2');
+
+  if (!card0 || !card1 || !card2) return;
+
+  card0.className = 'carousel-card';
+  card1.className = 'carousel-card';
+  card2.className = 'carousel-card';
+
+  if (activeCarouselIndex === 0) {
+    card0.classList.add('card-center');
+    card1.classList.add('card-right');
+    card2.classList.add('card-left');
+  } else if (activeCarouselIndex === 1) {
+    card0.classList.add('card-left');
+    card1.classList.add('card-center');
+    card2.classList.add('card-right');
+  } else {
+    card0.classList.add('card-right');
+    card1.classList.add('card-left');
+    card2.classList.add('card-center');
+  }
+}
+
+function prevCarouselCard() {
+  activeCarouselIndex = (activeCarouselIndex - 1 + 3) % 3;
+  renderCarousel();
+}
+
+function nextCarouselCard() {
+  activeCarouselIndex = (activeCarouselIndex + 1) % 3;
+  renderCarousel();
+}
+
+function handleCardClick(cardIndex, actionTarget) {
+  if (activeCarouselIndex !== cardIndex) {
+    activeCarouselIndex = cardIndex;
+    renderCarousel();
+    return;
+  }
+
+  // If already central big card: navigate to section or trigger action!
+  if (actionTarget === 'trip') {
+    const tripWAText = encodeURIComponent(`Halo KAMERAD DAJA, saya tertarik mendaftar trip alam *Walk With Kamerad*. Boleh minta info pendaftaran & jadwal terdekat?`);
+    window.open(`https://api.whatsapp.com/send?phone=${BASECAMP_WHATSAPP_NUMBER}&text=${tripWAText}`, '_blank');
+  } else if (actionTarget) {
+    const targetEl = document.querySelector(actionTarget);
+    if (targetEl) targetEl.scrollIntoView({ behavior: 'smooth' });
+  }
+}
 
 // Secret Admin URL Trigger Detector (/kameradcrewonly/)
 function checkSecretAdminURL() {
@@ -491,6 +464,27 @@ function closeMobileNav() {
   const drawerBackdrop = document.getElementById('navDrawerBackdrop');
   if (drawerBackdrop) drawerBackdrop.classList.remove('active');
 }
+
+// Globe Language Dropdown Handlers
+function toggleLangDropdown() {
+  const menu = document.getElementById('langDropdownMenu');
+  if (menu) menu.classList.toggle('active');
+}
+
+function selectLanguage(lang) {
+  setLanguage(lang);
+  const menu = document.getElementById('langDropdownMenu');
+  if (menu) menu.classList.remove('active');
+}
+
+// Close dropdown on outside click
+document.addEventListener('click', (e) => {
+  const wrapper = document.querySelector('.lang-dropdown-wrapper');
+  const menu = document.getElementById('langDropdownMenu');
+  if (wrapper && menu && !wrapper.contains(e.target)) {
+    menu.classList.remove('active');
+  }
+});
 
 // Helper: Format Currency to Indonesian Rupiah (Rp)
 function formatRupiah(amount) {
@@ -567,27 +561,6 @@ async function fetchItemsFromSupabase() {
   }
 }
 
-// Globe Language Dropdown Handlers
-function toggleLangDropdown() {
-  const menu = document.getElementById('langDropdownMenu');
-  if (menu) menu.classList.toggle('active');
-}
-
-function selectLanguage(lang) {
-  setLanguage(lang);
-  const menu = document.getElementById('langDropdownMenu');
-  if (menu) menu.classList.remove('active');
-}
-
-// Close dropdown on outside click
-document.addEventListener('click', (e) => {
-  const wrapper = document.querySelector('.lang-dropdown-wrapper');
-  const menu = document.getElementById('langDropdownMenu');
-  if (wrapper && menu && !wrapper.contains(e.target)) {
-    menu.classList.remove('active');
-  }
-});
-
 // Render Nav Bar Auth Buttons (Person Icon)
 function renderNavAuthButtons() {
   const container = document.getElementById('navAuthContainer');
@@ -634,7 +607,7 @@ function renderForSaleCatalog() {
     const displayName = currentLang === 'id' ? (item.name_id || item.name) : item.name;
     const displaySpecs = currentLang === 'id' ? (item.specs_id || item.specs) : item.specs;
 
-    const buyWAText = encodeURIComponent(`Halo KAMERAD Basecamp, saya berminat membeli produk baru: *${displayName}* (${formatRupiah(item.price)})`);
+    const buyWAText = encodeURIComponent(`Halo KAMERAD DAJA, saya berminat membeli produk baru: *${displayName}* (${formatRupiah(item.price)})`);
     const waLink = `https://api.whatsapp.com/send?phone=${BASECAMP_WHATSAPP_NUMBER}&text=${buyWAText}`;
 
     return `
@@ -671,7 +644,7 @@ function renderLaundryServices() {
     const displayName = currentLang === 'id' ? (srv.name_id || srv.name) : srv.name;
     const displayDesc = currentLang === 'id' ? (srv.desc_id || srv.desc) : srv.desc;
 
-    const laundryWAText = encodeURIComponent(`Halo KAMERAD Basecamp, saya ingin pesan layanan cuci & perawatan alat: *${displayName}* (${formatRupiah(srv.price)})`);
+    const laundryWAText = encodeURIComponent(`Halo KAMERAD DAJA, saya ingin pesan layanan cuci & perawatan alat: *${displayName}* (${formatRupiah(srv.price)})`);
     const waLink = `https://api.whatsapp.com/send?phone=${BASECAMP_WHATSAPP_NUMBER}&text=${laundryWAText}`;
 
     return `
@@ -848,7 +821,7 @@ function closeCustomerBookingsModal() {
   document.getElementById('customerBookingsModal').classList.remove('active');
 }
 
-// Staff & Admin Auth Handler (Kamerad | KameradAdmin123)
+// Staff & Admin Auth Handler
 function openAdminDashboardModal() {
   const modal = document.getElementById('adminDashboardModal');
   const loginForm = document.getElementById('adminLoginForm');
@@ -1520,7 +1493,7 @@ async function submitOrderAndOpenWhatsApp(event) {
     }
 
     waText += `----------------------------------------\n`;
-    waText += `Dikirim dari web app KAMERAD basecamp edition`;
+    waText += `Dikirim dari web app KAMERAD DAJA`;
   } else {
     waText += `🏕️ *RENTAL ORDER - KAMERAD BASECAMP*\n`;
     waText += `----------------------------------------\n`;
@@ -1549,7 +1522,7 @@ async function submitOrderAndOpenWhatsApp(event) {
     }
 
     waText += `----------------------------------------\n`;
-    waText += `Sent via KAMERAD basecamp edition web app`;
+    waText += `Sent via KAMERAD DAJA web app`;
   }
 
   const encodedWA = encodeURIComponent(waText);
@@ -1620,6 +1593,7 @@ function setLanguage(lang) {
   });
 
   renderNavAuthButtons();
+  renderCarousel();
   renderCatalog();
   renderForSaleCatalog();
   renderLaundryServices();
