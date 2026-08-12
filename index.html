@@ -556,6 +556,23 @@
         </div>
       </form>
     </div>
+  <!-- Open Trip Registration Confirmation Modal -->
+  <div class="modal-backdrop" id="openTripConfirmModal">
+    <div class="modal-card" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3 style="font-size: 1.15rem; color: #a855f7; display: flex; align-items: center; gap: 0.5rem;">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 002 2h1.5a2.5 2.5 0 002.5-2.5V7a2 2 0 00-2-2h-2c-.552 0-1-.448-1-1V2.055M12 22A10 10 0 1012 2a10 10 0 000 20z"></path></svg>
+          Konfirmasi Pendaftaran Open Trip
+        </h3>
+        <button class="btn-close" onclick="closeOpenTripConfirmModal()">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <div class="modal-body" id="openTripConfirmModalBody">
+        <!-- Dynamically populated via app.js -->
+      </div>
+    </div>
   </div>
 
   <!-- Customer Auth Modal (Login / Register) -->

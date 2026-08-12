@@ -171,6 +171,9 @@ let localBookings = JSON.parse(localStorage.getItem('kmrd_local_bookings') || '[
 // Carousel Active Card Index (1 = Walk With Kamerad is center)
 let activeCarouselIndex = 1;
 
+// Selected Trip for Modal Confirmation
+let selectedTripForRegistration = null;
+
 // Gear Database
 let GEAR_CATALOG = [
   {
@@ -555,9 +558,9 @@ function getRentalDurationDays() {
   return diffDays > 0 ? diffDays : 2;
 }
 
-// Calculate Item Cost (Rental vs Fixed Price items like Open Trip, For Sale, Laundry)
+// Calculate Item Cost (Rental vs Fixed Price items like For Sale, Laundry)
 function getItemTotalCost(item, durationDays) {
-  if (item.itemType === 'trip' || item.itemType === 'sale' || item.itemType === 'laundry' || item.price !== undefined) {
+  if (item.itemType === 'sale' || item.itemType === 'laundry' || item.price !== undefined) {
     return (item.price || item.priceBase2Days || 0) * item.qty;
   }
   const base2 = item.priceBase2Days || 50000;
@@ -647,15 +650,12 @@ function renderNavAuthButtons() {
   }
 }
 
-// Render Open Trips Grid (With Cart Support!)
+// Render Open Trips Grid (Direct WhatsApp Registration with Confirmation Modal)
 function renderOpenTripsCatalog() {
   const grid = document.getElementById('openTripGrid');
   if (!grid) return;
 
   grid.innerHTML = OPEN_TRIPS.map(trip => {
-    const tripWAText = encodeURIComponent(`Halo KAMERAD basecamp edition, saya tertarik mendaftar Open Trip: *${trip.title}* (${trip.dateRange} - ${formatRupiah(trip.price)}/pax)`);
-    const waLink = `https://wa.me/${BASECAMP_WHATSAPP_NUMBER}?text=${tripWAText}`;
-
     return `
       <div class="service-card">
         <div class="card-img-container">
@@ -676,14 +676,100 @@ function renderOpenTripsCatalog() {
             </div>
           </div>
           <div class="card-actions" style="margin-top: 0.5rem;">
-            <button class="btn-primary" onclick="addTripToCart('${trip.id}')" style="background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%); width: 100%;">
-              🛒 ${currentLang === 'id' ? 'Tambah ke Keranjang' : 'Add Trip to Cart'}
+            <button class="btn-primary" onclick="openTripRegistrationModal('${trip.id}')" style="background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%); width: 100%;">
+              ⛰️ ${currentLang === 'id' ? 'Daftar Trip via WhatsApp' : 'Register Trip via WA'}
             </button>
           </div>
         </div>
       </div>
     `;
   }).join('');
+}
+
+// Open Trip Registration Confirmation Modal (Prevents accidental WhatsApp redirect)
+function openTripRegistrationModal(tripId) {
+  const trip = OPEN_TRIPS.find(t => t.id === tripId);
+  if (!trip) return;
+
+  selectedTripForRegistration = trip;
+  const modalBackdrop = document.getElementById('openTripConfirmModal');
+  const modalBody = document.getElementById('openTripConfirmModalBody');
+
+  const defaultName = currentCustomer ? currentCustomer.name : '';
+  const defaultPhone = currentCustomer ? currentCustomer.phone : '';
+
+  modalBody.innerHTML = `
+    <div style="display: flex; flex-direction: column; gap: 1rem;">
+      <div style="display: flex; gap: 0.85rem; background: var(--bg-card); padding: 0.85rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); align-items: center;">
+        <img src="${trip.image}" alt="${trip.title}" style="width: 76px; height: 76px; object-fit: cover; border-radius: var(--radius-sm);">
+        <div>
+          <span style="font-size: 0.72rem; color: #a855f7; font-weight: 800;">⛰️ OPEN TRIP EKSPEDISI</span>
+          <h4 style="font-size: 1rem; color: #fff; margin: 2px 0;">${trip.title}</h4>
+          <div style="font-size: 0.8rem; color: var(--text-muted);">🗓️ ${trip.dateRange} (${trip.duration})</div>
+          <div style="font-size: 0.9rem; font-weight: 800; color: var(--green-success); margin-top: 2px;">${formatRupiah(trip.price)} / pax</div>
+        </div>
+      </div>
+
+      <div style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); padding: 0.75rem; border-radius: var(--radius-sm); font-size: 0.82rem; color: #d8b4fe;">
+        ℹ️ <strong>Konfirmasi Pendaftaran:</strong> Anda akan terhubung langsung ke WhatsApp Resmi KAMERAD (+62 818-0359-0667) untuk mengonfirmasi partisipasi ekspedisi ini.
+      </div>
+
+      <form onsubmit="submitTripRegistrationWA(event)">
+        <div class="input-field-wrapper" style="margin-bottom: 0.75rem;">
+          <label for="tripParticipantName">Nama Lengkap Peserta *</label>
+          <input type="text" id="tripParticipantName" class="search-input" style="padding-left: 1rem;" placeholder="e.g. Alex Harrison" value="${defaultName}" required>
+        </div>
+
+        <div class="input-field-wrapper" style="margin-bottom: 1rem;">
+          <label for="tripParticipantPhone">Nomor WhatsApp *</label>
+          <input type="tel" id="tripParticipantPhone" class="search-input" style="padding-left: 1rem;" placeholder="e.g. 081803590667" value="${defaultPhone}" required>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+          <button type="button" class="btn-secondary" onclick="closeOpenTripConfirmModal()">Batal</button>
+          <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%); border: none;">
+            <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-1.154 4.22 4.22-1.107z"/></svg>
+            <span>Lanjut ke WhatsApp</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  `;
+
+  modalBackdrop.classList.add('active');
+}
+
+function closeOpenTripConfirmModal() {
+  const modalBackdrop = document.getElementById('openTripConfirmModal');
+  if (modalBackdrop) modalBackdrop.classList.remove('active');
+}
+
+function submitTripRegistrationWA(event) {
+  event.preventDefault();
+  if (!selectedTripForRegistration) return;
+
+  const pName = document.getElementById('tripParticipantName').value.trim();
+  const pPhone = document.getElementById('tripParticipantPhone').value.trim();
+
+  if (!pName || !pPhone) {
+    showToast('Silakan lengkapi Nama dan Nomor WhatsApp Anda.', 'warning');
+    return;
+  }
+
+  let waText = '';
+  waText += `⛰️ *PENDAFTARAN OPEN TRIP - KAMERAD BASECAMP*\n`;
+  waText += `----------------------------------------\n`;
+  waText += `🏔️ *Ekspedisi:* ${selectedTripForRegistration.title}\n`;
+  waText += `🗓️ *Jadwal:* ${selectedTripForRegistration.dateRange} (${selectedTripForRegistration.duration})\n`;
+  waText += `💰 *Biaya:* ${formatRupiah(selectedTripForRegistration.price)} / pax\n\n`;
+  waText += `👤 *Nama Peserta:* ${pName}\n`;
+  waText += `📱 *WhatsApp:* ${pPhone}\n`;
+  waText += `----------------------------------------\n`;
+  waText += `Halo tim KAMERAD, saya mengonfirmasi pendaftaran untuk Open Trip ini!`;
+
+  closeOpenTripConfirmModal();
+  showToast('Membuka WhatsApp Basecamp...', 'success');
+  openWhatsAppURL(waText);
 }
 
 // Render For Sale Catalog Grid (With Cart Support!)
@@ -784,33 +870,6 @@ function addToCart(itemId) {
   updateCartUI();
   const successMsg = currentLang === 'id' ? `"${displayName}" ditambahkan ke keranjang!` : `Added "${displayName}" to cart!`;
   showToast(successMsg, 'success');
-}
-
-// Add Open Trip to Cart
-function addTripToCart(tripId) {
-  const trip = OPEN_TRIPS.find(t => t.id === tripId);
-  if (!trip) return;
-
-  const existingInCart = cart.find(c => c.id === tripId);
-  if (existingInCart) {
-    existingInCart.qty += 1;
-  } else {
-    cart.push({
-      id: trip.id,
-      name: trip.title,
-      name_id: trip.title,
-      price: trip.price,
-      priceBase2Days: trip.price,
-      image: trip.image,
-      itemType: 'trip',
-      qty: 1,
-      dateRange: trip.dateRange
-    });
-  }
-
-  updateCartUI();
-  const msg = currentLang === 'id' ? `Open Trip "${trip.title}" ditambahkan ke keranjang!` : `Added Open Trip "${trip.title}" to cart!`;
-  showToast(msg, 'success');
 }
 
 // Add For Sale Item to Cart
@@ -1352,7 +1411,6 @@ function updateCartUI() {
   const durationLabel = document.getElementById('rentalDurationDaysLabel');
   if (durationLabel) durationLabel.innerText = `${durationDays} ${currentLang === 'id' ? 'Hari' : 'Days'}`;
 
-  // Grand Total Calculation across all item types
   const grandTotalRental = cart.reduce((sum, item) => sum + getItemTotalCost(item, durationDays), 0);
 
   const dpAmount = Math.round(grandTotalRental * (paymentSelection.dpPercent / 100));
@@ -1406,10 +1464,7 @@ function updateCartUI() {
     let typeBadgeHTML = `<span class="spec-chip" style="background: rgba(239, 68, 68, 0.15); color: var(--red-primary); font-size: 0.65rem; font-weight: 800;">RENTAL</span>`;
     let rateDetailText = `${formatRupiah(item.priceBase2Days)} / 2 Days`;
 
-    if (item.itemType === 'trip') {
-      typeBadgeHTML = `<span class="spec-chip" style="background: rgba(168, 85, 247, 0.15); color: #a855f7; font-size: 0.65rem; font-weight: 800;">OPEN TRIP</span>`;
-      rateDetailText = `${formatRupiah(item.price)} / pax`;
-    } else if (item.itemType === 'sale') {
+    if (item.itemType === 'sale') {
       typeBadgeHTML = `<span class="spec-chip" style="background: rgba(16, 185, 129, 0.15); color: var(--green-success); font-size: 0.65rem; font-weight: 800;">FOR SALE</span>`;
       rateDetailText = `${formatRupiah(item.price)} / item`;
     } else if (item.itemType === 'laundry') {
@@ -1650,7 +1705,7 @@ async function submitOrderAndOpenWhatsApp(event) {
   });
   localStorage.setItem('kmrd_local_bookings', JSON.stringify(localBookings));
 
-  // 2. Construct Detailed WhatsApp Message Grouped by Item Type
+  // 2. Construct Detailed WhatsApp Message
   let waText = '';
   if (currentLang === 'id') {
     waText += `🏕️ *PESANAN BASECAMP - KAMERAD*\n`;
