@@ -372,14 +372,19 @@ h1, h2, h3, h4, h5, h6 {
   flex-shrink: 0;
 }
 
-/* SECTION DISPLAY CONTROL (On-Demand Visibility) */
+/* SECTION DISPLAY CONTROL (Strict On-Demand Visibility) */
 .content-section {
-  display: none;
-  animation: fadeIn 0.4s ease forwards;
+  display: none !important;
 }
 
 .content-section.active-section {
-  display: block;
+  display: block !important;
+  animation: fadeIn 0.4s ease forwards;
+}
+
+.home-section.active-section {
+  display: flex !important;
+  flex-direction: column !important;
 }
 
 @keyframes fadeIn {
@@ -392,8 +397,6 @@ h1, h2, h3, h4, h5, h6 {
   max-width: 1280px;
   margin: 0 auto;
   padding: 3rem 1.25rem 2rem 1.25rem;
-  display: flex;
-  flex-direction: column;
   align-items: center;
   gap: 1.5rem;
   width: 100%;
