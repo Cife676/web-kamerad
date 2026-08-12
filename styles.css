@@ -595,28 +595,40 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: 0 4px 14px rgba(239, 68, 68, 0.25);
 }
 
-/* Promos Banner Bar */
+/* Promos Banner Bar (Single-Line Marquee Ticker) */
 .promo-strip-banner {
   background: linear-gradient(90deg, #991b1b 0%, #dc2626 50%, #7f1d1d 100%);
-  padding: 0.65rem 1rem;
+  padding: 0.6rem 0;
   color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.85rem;
   box-shadow: 0 4px 20px rgba(220, 38, 38, 0.3);
-  text-align: center;
   width: 100%;
+  overflow: hidden;
+  position: relative;
+  white-space: nowrap;
 }
 
-.promo-strip-text {
-  font-weight: 700;
-  font-size: 0.85rem;
-  display: flex;
+.promo-ticker-track {
+  display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  justify-content: center;
+  gap: 2rem;
+  white-space: nowrap;
+  font-size: 0.86rem;
+  font-weight: 700;
+  animation: promoTickerScroll 22s linear infinite;
+  will-change: transform;
+}
+
+.promo-ticker-track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes promoTickerScroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
 .promo-badge-pill {
@@ -627,6 +639,7 @@ h1, h2, h3, h4, h5, h6 {
   padding: 2px 7px;
   border-radius: var(--radius-full);
   text-transform: uppercase;
+  flex-shrink: 0;
 }
 
 /* Sections Base */
