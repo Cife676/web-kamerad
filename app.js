@@ -411,10 +411,31 @@ let rentalDates = {
   endDate: formatDateInput(endDateDefault)
 };
 
+// Category-Specific Payment Selection State
 let paymentSelection = {
-  method: 'dp',
-  dpPercent: 50
+  method: 'dp',        // 'dp' or 'cod' for rental
+  dpPercent: 50,
+  laundryMethod: 'dropoff', // 'dropoff' (Saat Drop-off) or 'pickup' (Saat Pick-up Selesai)
+  kshopMethod: 'cod'       // 'cod' (Tunai di Basecamp) or 'transfer' (Transfer / QRIS Basecamp)
 };
+
+// Select Payment Method for any category
+function selectPaymentMethod(category, method) {
+  if (category === 'rental') {
+    paymentSelection.method = method;
+    validateCODDateRule();
+  } else if (category === 'laundry') {
+    paymentSelection.laundryMethod = method;
+  } else if (category === 'kshop') {
+    paymentSelection.kshopMethod = method;
+  }
+  updateCartUI();
+}
+
+function selectDPPercent(val) {
+  paymentSelection.dpPercent = parseInt(val);
+  updateCartUI();
+}
 
 // Initialize App
 document.addEventListener('DOMContentLoaded', () => {
@@ -825,7 +846,7 @@ function renderForSaleCatalog() {
           </div>
           <div class="card-actions" style="margin-top: 0.5rem;">
             <button class="btn-primary" onclick="addSaleItemToCart('${item.id}')" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); width: 100%;">
-              🛒 ${currentLang === 'id' ? 'Tambah ke Shop Cart' : 'Add to Shop Cart'}
+              🛒 ${currentLang === 'id' ? 'Tambah ke K-Shop' : 'Add to K-Shop'}
             </button>
           </div>
         </div>
@@ -955,7 +976,7 @@ function renderLaundryModalContent() {
       <!-- Actions -->
       <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 0.25rem;">
         <button type="button" class="btn-secondary" onclick="addConfiguredLaundryToCart()" style="flex: 1;">
-          🛒 Tambah ke Lau. Cart
+          🛒 Tambah ke Laundry
         </button>
         <button type="button" class="btn-primary" onclick="submitConfiguredLaundryWA()" style="flex: 1; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border: none;">
           <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-1.154 4.22 4.22-1.107z"/></svg>
@@ -996,7 +1017,7 @@ function addConfiguredLaundryToCart() {
   activeCartTab = 'laundry';
   closeLaundryBookingModal();
   updateCartUI();
-  showToast(`Layanan "${displayName}" ditambahkan ke Lau. Cart!`, 'success');
+  showToast(`Layanan "${displayName}" ditambahkan ke Laundry Cart!`, 'success');
 }
 
 function submitConfiguredLaundryWA() {
@@ -1017,6 +1038,7 @@ function submitConfiguredLaundryWA() {
   waText += `⏱️ *Opsi Kecepatan:* Standard (3 Hari)\n`;
   waText += `📅 *Tanggal Antar (Drop-off):* ${selectedLaundryDropOffDate}\n`;
   waText += `✨ *Tanggal Selesai (Pick-up):* ${pickUpDateStr} (Otomatis +3 Hari)\n`;
+  waText += `💳 *Metode Pembayaran:* ${paymentSelection.laundryMethod === 'dropoff' ? 'Bayar saat Drop-off Alat' : 'Bayar saat Pick-up Selesai'}\n`;
   waText += `💰 *Biaya Service:* ${formatRupiah(selectedLaundryService.price)}\n\n`;
   waText += `👤 *Nama Pemesan:* ${pName}\n`;
   if (pPhone) waText += `📱 *WhatsApp:* ${pPhone}\n`;
@@ -1055,11 +1077,11 @@ function addToCart(itemId) {
 
   activeCartTab = 'rental';
   updateCartUI();
-  const successMsg = currentLang === 'id' ? `"${displayName}" ditambahkan ke Rent Cart!` : `Added "${displayName}" to Rent Cart!`;
+  const successMsg = currentLang === 'id' ? `"${displayName}" ditambahkan ke Rental Cart!` : `Added "${displayName}" to Rental Cart!`;
   showToast(successMsg, 'success');
 }
 
-// Add For Sale Item to Shop Cart
+// Add For Sale Item to K-Shop Cart
 function addSaleItemToCart(itemId) {
   const item = FOR_SALE_ITEMS.find(i => i.id === itemId);
   if (!item) return;
@@ -1083,7 +1105,7 @@ function addSaleItemToCart(itemId) {
 
   activeCartTab = 'sale';
   updateCartUI();
-  const msg = currentLang === 'id' ? `"${displayName}" ditambahkan ke Shop Cart!` : `Added "${displayName}" to Shop Cart!`;
+  const msg = currentLang === 'id' ? `"${displayName}" ditambahkan ke K-Shop Cart!` : `Added "${displayName}" to K-Shop Cart!`;
   showToast(msg, 'success');
 }
 
@@ -1594,7 +1616,7 @@ function updateCartUI() {
   // Filter Cart Items based on activeCartTab
   const activeTabItems = cart.filter(i => (i.itemType || 'rental') === activeCartTab);
 
-  // 2. Dynamic Overview Card & Payment Choice Box
+  // 2. Dynamic Overview Card & Payment Choice Box per Category
   const datesCard = document.querySelector('.cart-dates-card');
   const paymentBox = document.querySelector('.payment-choice-box');
   const dpRow = document.getElementById('summaryDPAmountRow');
@@ -1618,7 +1640,33 @@ function updateCartUI() {
       `;
     }
 
-    if (paymentBox) paymentBox.style.display = 'block';
+    if (paymentBox) {
+      paymentBox.style.display = 'block';
+      paymentBox.innerHTML = `
+        <span class="payment-choice-title">💳 Pilih Metode Pembayaran Rental</span>
+        <div class="payment-options-grid">
+          <label class="payment-radio-card ${paymentSelection.method === 'dp' ? 'selected' : ''}" id="dpRadioCard" onclick="selectPaymentMethod('rental', 'dp')">
+            <input type="radio" name="paymentOption" value="dp" ${paymentSelection.method === 'dp' ? 'checked' : ''}>
+            <span class="payment-opt-name">Down Payment</span>
+            <span class="payment-opt-sub">Kunci booking dengan DP</span>
+          </label>
+          <label class="payment-radio-card ${paymentSelection.method === 'cod' ? 'selected' : ''}" id="codRadioCard" onclick="selectPaymentMethod('rental', 'cod')">
+            <input type="radio" name="paymentOption" value="cod" ${paymentSelection.method === 'cod' ? 'checked' : ''}>
+            <span class="payment-opt-name">Full COD</span>
+            <span class="payment-opt-sub">Bayar di Basecamp</span>
+          </label>
+        </div>
+        ${paymentSelection.method === 'dp' ? `
+          <div id="dpPercentSelectorRow" style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.4rem;">
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Pilih Persentase DP:</span>
+            <select id="dpPercentSelect" onchange="selectDPPercent(this.value)" style="background: var(--bg-main); color: #fff; border: 1px solid var(--border-subtle); border-radius: 4px; padding: 2px 6px; font-size: 0.82rem; font-weight: 700;">
+              <option value="50" ${paymentSelection.dpPercent === 50 ? 'selected' : ''}>50% Down Payment</option>
+              <option value="30" ${paymentSelection.dpPercent === 30 ? 'selected' : ''}>30% Down Payment</option>
+            </select>
+          </div>
+        ` : ''}
+      `;
+    }
 
     const dpAmount = Math.round(activeTabTotal * (paymentSelection.dpPercent / 100));
     const balanceAmount = activeTabTotal - dpAmount;
@@ -1665,9 +1713,31 @@ function updateCartUI() {
       `;
     }
 
-    if (paymentBox) paymentBox.style.display = 'none';
+    if (paymentBox) {
+      paymentBox.style.display = 'block';
+      paymentBox.innerHTML = `
+        <span class="payment-choice-title">💳 Pilih Metode Pembayaran Laundry</span>
+        <div class="payment-options-grid">
+          <label class="payment-radio-card ${paymentSelection.laundryMethod === 'dropoff' ? 'selected' : ''}" onclick="selectPaymentMethod('laundry', 'dropoff')">
+            <input type="radio" name="laundryPayOption" value="dropoff" ${paymentSelection.laundryMethod === 'dropoff' ? 'checked' : ''}>
+            <span class="payment-opt-name" style="color: #60a5fa;">Bayar saat Drop-off</span>
+            <span class="payment-opt-sub">Bayar saat antar barang di Basecamp</span>
+          </label>
+          <label class="payment-radio-card ${paymentSelection.laundryMethod === 'pickup' ? 'selected' : ''}" onclick="selectPaymentMethod('laundry', 'pickup')">
+            <input type="radio" name="laundryPayOption" value="pickup" ${paymentSelection.laundryMethod === 'pickup' ? 'checked' : ''}>
+            <span class="payment-opt-name" style="color: #60a5fa;">Bayar saat Ambil (Pick-up)</span>
+            <span class="payment-opt-sub">Bayar saat barang selesai dicuci</span>
+          </label>
+        </div>
+      `;
+    }
+
     if (dpRow) dpRow.style.display = 'none';
-    if (balanceRow) balanceRow.style.display = 'none';
+    if (balanceRow) {
+      balanceRow.style.display = 'flex';
+      balanceRow.querySelector('span:first-child').innerText = 'Metode Pembayaran:';
+      balanceRow.querySelector('span:last-child').innerText = paymentSelection.laundryMethod === 'dropoff' ? 'Bayar saat Drop-off' : 'Bayar saat Pick-up Selesai';
+    }
 
     if (subtotalRow) subtotalRow.innerText = 'Tarif Cuci & Care';
     if (grandTotalRow) grandTotalRow.innerText = formatRupiah(activeTabTotal);
@@ -1685,9 +1755,31 @@ function updateCartUI() {
       `;
     }
 
-    if (paymentBox) paymentBox.style.display = 'none';
+    if (paymentBox) {
+      paymentBox.style.display = 'block';
+      paymentBox.innerHTML = `
+        <span class="payment-choice-title">💳 Pilih Metode Pembayaran K-Shop</span>
+        <div class="payment-options-grid">
+          <label class="payment-radio-card ${paymentSelection.kshopMethod === 'cod' ? 'selected' : ''}" onclick="selectPaymentMethod('kshop', 'cod')">
+            <input type="radio" name="kshopPayOption" value="cod" ${paymentSelection.kshopMethod === 'cod' ? 'checked' : ''}>
+            <span class="payment-opt-name" style="color: var(--green-success);">Tunai di Basecamp</span>
+            <span class="payment-opt-sub">Bayar tunai di lokasi</span>
+          </label>
+          <label class="payment-radio-card ${paymentSelection.kshopMethod === 'transfer' ? 'selected' : ''}" onclick="selectPaymentMethod('kshop', 'transfer')">
+            <input type="radio" name="kshopPayOption" value="transfer" ${paymentSelection.kshopMethod === 'transfer' ? 'checked' : ''}>
+            <span class="payment-opt-name" style="color: var(--green-success);">Transfer / QRIS</span>
+            <span class="payment-opt-sub">Transfer / Scan QRIS Basecamp</span>
+          </label>
+        </div>
+      `;
+    }
+
     if (dpRow) dpRow.style.display = 'none';
-    if (balanceRow) balanceRow.style.display = 'none';
+    if (balanceRow) {
+      balanceRow.style.display = 'flex';
+      balanceRow.querySelector('span:first-child').innerText = 'Metode Pembayaran:';
+      balanceRow.querySelector('span:last-child').innerText = paymentSelection.kshopMethod === 'cod' ? 'Tunai di Basecamp (COD)' : 'Transfer / QRIS Basecamp';
+    }
 
     if (subtotalRow) subtotalRow.innerText = 'Total Produk';
     if (grandTotalRow) grandTotalRow.innerText = formatRupiah(activeTabTotal);
@@ -1773,37 +1865,6 @@ function setupEventListeners() {
 
   if (cartBtn) cartBtn.addEventListener('click', () => cartBackdrop.classList.add('active'));
   if (closeCartBtn) closeCartBtn.addEventListener('click', () => cartBackdrop.classList.remove('active'));
-
-  const dpRadio = document.getElementById('payMethodDP');
-  const codRadio = document.getElementById('payMethodCOD');
-  const dpPercentSlider = document.getElementById('dpPercentSelect');
-
-  if (dpRadio) {
-    dpRadio.addEventListener('change', () => {
-      paymentSelection.method = 'dp';
-      document.getElementById('dpRadioCard').classList.add('selected');
-      document.getElementById('codRadioCard').classList.remove('selected');
-      validateCODDateRule();
-      updateCartUI();
-    });
-  }
-
-  if (codRadio) {
-    codRadio.addEventListener('change', () => {
-      paymentSelection.method = 'cod';
-      document.getElementById('codRadioCard').classList.add('selected');
-      document.getElementById('dpRadioCard').classList.remove('selected');
-      validateCODDateRule();
-      updateCartUI();
-    });
-  }
-
-  if (dpPercentSlider) {
-    dpPercentSlider.addEventListener('change', (e) => {
-      paymentSelection.dpPercent = parseInt(e.target.value);
-      updateCartUI();
-    });
-  }
 }
 
 // Quick View Modal
@@ -1860,7 +1921,7 @@ function closeQuickView() {
 function openCheckoutModal() {
   const activeTabItems = cart.filter(i => (i.itemType || 'rental') === activeCartTab);
   if (activeTabItems.length === 0) {
-    const tabName = activeCartTab === 'rental' ? 'Rent Cart' : activeCartTab === 'laundry' ? 'Lau. Cart' : 'Shop Cart';
+    const tabName = activeCartTab === 'rental' ? 'Rental Cart' : activeCartTab === 'laundry' ? 'Laundry Cart' : 'K-Shop Cart';
     showToast(`${tabName} Anda kosong!`, 'warning');
     return;
   }
@@ -1925,7 +1986,7 @@ async function submitOrderAndOpenWhatsApp(event) {
         p_start_date: activeCartTab === 'rental' ? rentalDates.startDate : null,
         p_end_date: activeCartTab === 'rental' ? rentalDates.endDate : null,
         p_duration_days: activeCartTab === 'rental' ? durationDays : 0,
-        p_payment_method: paymentSelection.method,
+        p_payment_method: activeCartTab === 'rental' ? paymentSelection.method : (activeCartTab === 'laundry' ? paymentSelection.laundryMethod : paymentSelection.kshopMethod),
         p_grand_total: grandTotal,
         p_dp_amount: dpAmount,
         p_balance_amount: balanceAmount,
@@ -1948,7 +2009,7 @@ async function submitOrderAndOpenWhatsApp(event) {
     startDate: activeCartTab === 'rental' ? rentalDates.startDate : 'N/A',
     endDate: activeCartTab === 'rental' ? rentalDates.endDate : 'N/A',
     durationDays: activeCartTab === 'rental' ? durationDays : 0,
-    paymentMethod: paymentSelection.method,
+    paymentMethod: activeCartTab === 'rental' ? paymentSelection.method : (activeCartTab === 'laundry' ? paymentSelection.laundryMethod : paymentSelection.kshopMethod),
     grandTotal,
     dpAmount,
     balanceAmount,
@@ -1981,6 +2042,10 @@ async function submitOrderAndOpenWhatsApp(event) {
       waText += `📌 *Catatan COD:* Pengambilan barang di Basecamp pada tanggal ${rentalDates.startDate}\n`;
     }
   } else if (activeCartTab === 'laundry') {
+    const laundryPayStr = paymentSelection.laundryMethod === 'dropoff' 
+      ? 'Bayar saat Drop-off Alat di Basecamp' 
+      : 'Bayar saat Ambil Selesai (Pick-up)';
+
     waText += `🧼 *PESANAN LAUNDRY & CARE - KAMERAD BASECAMP*\n`;
     waText += `----------------------------------------\n`;
     waText += `📋 *Order ID:* #${orderId}\n`;
@@ -1995,8 +2060,13 @@ async function submitOrderAndOpenWhatsApp(event) {
         waText += `  📅 Drop-off: ${item.dropOffDate} ➔ Pick-up Selesai: ${item.pickUpDate}\n`;
       }
     });
-    waText += `\n💰 *Total Biaya Laundry:* ${formatRupiah(grandTotal)}\n`;
+    waText += `\n💳 *METODE PEMBAYARAN:* ${laundryPayStr}\n`;
+    waText += `💰 *Total Biaya Laundry:* ${formatRupiah(grandTotal)}\n`;
   } else if (activeCartTab === 'sale') {
+    const kshopPayStr = paymentSelection.kshopMethod === 'cod' 
+      ? 'Tunai di Basecamp (COD)' 
+      : 'Transfer / Scan QRIS Basecamp';
+
     waText += `🛒 *PEMBELIAN K-SHOP - KAMERAD BASECAMP*\n`;
     waText += `----------------------------------------\n`;
     waText += `📋 *Order ID:* #${orderId}\n`;
@@ -2008,7 +2078,8 @@ async function submitOrderAndOpenWhatsApp(event) {
       const itemTotal = getItemTotalCost(item, durationDays);
       waText += `• ${displayName} x${item.qty} (${formatRupiah(itemTotal)})\n`;
     });
-    waText += `\n💰 *Total Pembelian:* ${formatRupiah(grandTotal)}\n`;
+    waText += `\n💳 *METODE PEMBAYARAN:* ${kshopPayStr}\n`;
+    waText += `💰 *Total Pembelian:* ${formatRupiah(grandTotal)}\n`;
   }
 
   if (notesInput) {
