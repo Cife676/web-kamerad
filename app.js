@@ -652,7 +652,7 @@ function renderOpenTripsCatalog() {
 
   grid.innerHTML = OPEN_TRIPS.map(trip => {
     const tripWAText = encodeURIComponent(`Halo KAMERAD basecamp edition, saya tertarik mendaftar Open Trip: *${trip.title}* (${trip.dateRange} - ${formatRupiah(trip.price)}/pax)`);
-    const waLink = `https://api.whatsapp.com/send?phone=${BASECAMP_WHATSAPP_NUMBER}&text=${tripWAText}`;
+    const waLink = `https://wa.me/${BASECAMP_WHATSAPP_NUMBER}?text=${tripWAText}`;
 
     return `
       <div class="service-card">
@@ -692,7 +692,7 @@ function renderForSaleCatalog() {
     const displaySpecs = currentLang === 'id' ? (item.specs_id || item.specs) : item.specs;
 
     const buyWAText = encodeURIComponent(`Halo KAMERAD basecamp edition, saya berminat membeli produk baru: *${displayName}* (${formatRupiah(item.price)})`);
-    const waLink = `https://api.whatsapp.com/send?phone=${BASECAMP_WHATSAPP_NUMBER}&text=${buyWAText}`;
+    const waLink = `https://wa.me/${BASECAMP_WHATSAPP_NUMBER}?text=${buyWAText}`;
 
     return `
       <div class="service-card">
@@ -729,7 +729,7 @@ function renderLaundryServices() {
     const displayDesc = currentLang === 'id' ? (srv.desc_id || srv.desc) : srv.desc;
 
     const laundryWAText = encodeURIComponent(`Halo KAMERAD basecamp edition, saya ingin pesan layanan cuci & perawatan alat: *${displayName}* (${formatRupiah(srv.price)})`);
-    const waLink = `https://api.whatsapp.com/send?phone=${BASECAMP_WHATSAPP_NUMBER}&text=${laundryWAText}`;
+    const waLink = `https://wa.me/${BASECAMP_WHATSAPP_NUMBER}?text=${laundryWAText}`;
 
     return `
       <div class="service-card">
@@ -1610,8 +1610,7 @@ async function submitOrderAndOpenWhatsApp(event) {
   }
 
   const encodedWA = encodeURIComponent(waText);
-  const waURL = `https://api.whatsapp.com/send?phone=${BASECAMP_WHATSAPP_NUMBER}&text=${encodedWA}`;
-
+  
   closeCheckoutModal();
   const successToast = currentLang === 'id' ? 'Pesanan dikonfirmasi! Membuka WhatsApp Basecamp...' : 'Order confirmed! Opening Basecamp WhatsApp...';
   showToast(successToast, 'success');
@@ -1619,9 +1618,33 @@ async function submitOrderAndOpenWhatsApp(event) {
   cart = [];
   updateCartUI();
 
-  setTimeout(() => {
-    window.open(waURL, '_blank');
-  }, 1000);
+  // Instant iOS Safari & Android compatible WhatsApp redirect (bypasses popup blocker)
+  openWhatsAppURL(waText);
+}
+
+// Universal Cross-Platform WhatsApp Opener (iOS Safari & Mobile App compatible)
+function openWhatsAppURL(waText) {
+  const encodedWA = encodeURIComponent(waText);
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  
+  // Primary universal wa.me deep link
+  const waURL = `https://wa.me/${BASECAMP_WHATSAPP_NUMBER}?text=${encodedWA}`;
+
+  if (isIOS) {
+    // iOS Safari requires direct window.location.href to bypass popup blocking
+    window.location.href = waURL;
+  } else {
+    // Android / Desktop fallback
+    const link = document.createElement('a');
+    link.href = waURL;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => {
+      document.body.removeChild(link);
+    }, 100);
+  }
 }
 
 // Toast Notifications
