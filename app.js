@@ -1,4 +1,4 @@
-/* KAMERAD basecamp edition - Application, Auth & Admin Management Logic */
+/* KAMERAD basecamp edition - Application, Auth, i18n & 3-Line Mobile Menu Logic */
 
 // ============================================================
 // SUPABASE CONFIGURATION
@@ -18,6 +18,12 @@ const ADMIN_PASSWORD_CRED = 'KameradAdmin123';
 const TRANSLATIONS = {
   id: {
     nav_cart: 'Keranjang',
+    nav_rental_equipment: 'Rental Equipment',
+    nav_for_sale: 'For Sale',
+    nav_laundry_service: 'Laundry Service',
+    nav_account: 'Akun Saya / Login',
+    for_sale_subtitle: 'Beli peralatan pendakian original baru dan aksesoris siap pakai untuk kebutuhan ekspedisi Anda.',
+    laundry_subtitle: 'Layanan cuci profesional, perawatan bulu angsa, waterproofing, dan sterilisasi alat gunung.',
     promo_tag: 'PROMO SPESIAL',
     promo_text: '🔥 Diskon s/d 30% Paket Outdoor & Alat Gunung!',
     promo_sub: '• Reservasi Online • DP atau COD di Basecamp',
@@ -84,6 +90,12 @@ const TRANSLATIONS = {
   },
   en: {
     nav_cart: 'Cart',
+    nav_rental_equipment: 'Rental Equipment',
+    nav_for_sale: 'For Sale',
+    nav_laundry_service: 'Laundry Service',
+    nav_account: 'My Account / Login',
+    for_sale_subtitle: 'Buy brand new original trekking gear and ready-to-use accessories for your expedition.',
+    laundry_subtitle: 'Professional gear wash, down care, waterproofing, and sterilization for post-trek outdoor gear.',
     promo_tag: 'SPECIAL PROMO',
     promo_text: '🔥 Up to 30% OFF Expedition Bundles & Solo Trekker Kits!',
     promo_sub: '• Reserve Online • Down Payment or Basecamp Pickup',
@@ -346,6 +358,77 @@ let GEAR_CATALOG = [
   }
 ];
 
+// For Sale Items (Peralatan Dijual)
+const FOR_SALE_ITEMS = [
+  {
+    id: 'sale-1',
+    name: 'KAMERAD Carbon Trekking Pole (Pair)',
+    name_id: 'Trekking Pole Karbon KAMERAD (Sepasang)',
+    price: 185000,
+    image: 'assets/hero_banner.jpg',
+    specs: ['100% 3K Carbon Fiber', 'Quick Flip Lock', 'EVA Foam Grip'],
+    specs_id: ['100% Karbon 3K', 'Kunci Flip Cepat', 'Grip Busa EVA']
+  },
+  {
+    id: 'sale-2',
+    name: 'Canister Gas Fuel 230g (Canister Supa-Burn)',
+    name_id: 'Gas Canister 230g Ultra-Burn',
+    price: 35000,
+    image: 'assets/tent_4season.jpg',
+    specs: ['Isobutane-Propane Mix', 'Sub-Zero Cold Weather Formula'],
+    specs_id: ['Campuran Isobutana-Propana', 'Formula Suhu Dingin']
+  },
+  {
+    id: 'sale-3',
+    name: 'Nikwax Waterproofing Fabric Spray 300ml',
+    name_id: 'Spray Waterproof Nikwax Fabric 300ml',
+    price: 95000,
+    image: 'assets/hero_banner.jpg',
+    specs: ['Restores DWR Layer', 'Water Repellent Spray for Tents & Jackets'],
+    specs_id: ['Mengembalikan Lapisan DWR', 'Cairan Anti Air Tenda & Jaket']
+  },
+  {
+    id: 'sale-4',
+    name: 'KAMERAD Waterproof Backpack Raincover 60L-80L',
+    name_id: 'Cover Bag Hujan KAMERAD 60L-80L',
+    price: 45000,
+    image: 'assets/tent_4season.jpg',
+    specs: ['210T Ripstop Nylon', 'Elastic Drawstring Fit', 'Reflective Logo'],
+    specs_id: ['Nylon Ripstop 210T', 'Tali Elastis Pas', 'Logo Reflektif Malam']
+  }
+];
+
+// Laundry & Gear Care Services (Layanan Cuci Alat)
+const LAUNDRY_SERVICES = [
+  {
+    id: 'laundry-1',
+    name: 'Tent Wash & Waterproofing Treatment',
+    name_id: 'Cuci Tenda & Treatment Anti-Air (Waterproofing)',
+    price: 65000,
+    image: 'assets/tent_4season.jpg',
+    desc: 'Deep clean wash, seam sealing inspection, UV protection spray, and complete drying.',
+    desc_id: 'Pembersihan mendalam, inspeksi seam tape, pelapisan ulang anti-air UV, dan pengeringan higienis.'
+  },
+  {
+    id: 'laundry-2',
+    name: 'Sleeping Bag Down Special Cleanse',
+    name_id: 'Cuci Khusus Sleeping Bag Bulu Angsa (Down Wash)',
+    price: 45000,
+    image: 'assets/hero_banner.jpg',
+    desc: 'Gentle down wash cleaner, loft restoration fluffing, and odor removal treatment.',
+    desc_id: 'Pencucian lembut formula khusus bulu angsa, restorasi kehangatan loft, dan penghilang bau.'
+  },
+  {
+    id: 'laundry-3',
+    name: 'Technical Backpack Deep Wash & Sanitization',
+    name_id: 'Cuci Kerir & Ransel Gunung Deep Clean',
+    price: 50000,
+    image: 'assets/hero_banner.jpg',
+    desc: 'Backpack foam padding wash, strap degreasing, zipper lubrication, and anti-bacterial spray.',
+    desc_id: 'Pembersihan busa punggung kerir, pencucian webbing strap, pelumasan resleting, dan anti-bakteri.'
+  }
+];
+
 // App State
 let cart = [];
 let activeCategory = 'all';
@@ -375,9 +458,22 @@ document.addEventListener('DOMContentLoaded', () => {
   setupDatePickers();
   renderNavAuthButtons();
   renderCatalog();
+  renderForSaleCatalog();
+  renderLaundryServices();
   updateCartUI();
   setupEventListeners();
 });
+
+// Mobile Hamburger Drawer Handlers
+function openMobileNav() {
+  const drawerBackdrop = document.getElementById('navDrawerBackdrop');
+  if (drawerBackdrop) drawerBackdrop.classList.add('active');
+}
+
+function closeMobileNav() {
+  const drawerBackdrop = document.getElementById('navDrawerBackdrop');
+  if (drawerBackdrop) drawerBackdrop.classList.remove('active');
+}
 
 // Helper: Format Currency to Indonesian Rupiah (Rp)
 function formatRupiah(amount) {
@@ -454,36 +550,111 @@ async function fetchItemsFromSupabase() {
   }
 }
 
-// Render Nav Bar Auth Buttons
+// Render Nav Bar Auth Buttons (Icon-Only on Mobile)
 function renderNavAuthButtons() {
   const container = document.getElementById('navAuthContainer');
   if (!container) return;
 
   if (isAdminLoggedIn) {
     container.innerHTML = `
-      <button class="btn-icon" style="background: rgba(239, 68, 68, 0.15); border-color: var(--red-primary); color: #fca5a5;" onclick="openAdminDashboardModal()">
-        🛡️ Staff
+      <button class="btn-icon" style="background: rgba(239, 68, 68, 0.15); border-color: var(--red-primary); color: #fca5a5;" onclick="openAdminDashboardModal()" aria-label="Staff Portal">
+        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+        <span class="btn-label">Staff</span>
       </button>
-      <button class="btn-icon" onclick="handleAdminLogout()" style="padding: 0.5rem 0.6rem;">
-        🚪
+      <button class="btn-icon" onclick="handleAdminLogout()" style="padding: 0.5rem 0.6rem;" aria-label="Logout">
+        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
       </button>
     `;
   } else if (currentCustomer) {
     container.innerHTML = `
-      <button class="btn-icon" onclick="openCustomerBookingsModal()">
-        👤 ${currentCustomer.name.split(' ')[0]}
+      <button class="btn-icon" onclick="openCustomerBookingsModal()" aria-label="My Bookings">
+        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+        <span class="btn-label">${currentCustomer.name.split(' ')[0]}</span>
       </button>
-      <button class="btn-icon" onclick="handleCustomerLogout()" style="padding: 0.5rem 0.6rem;">
-        🚪
+      <button class="btn-icon" onclick="handleCustomerLogout()" style="padding: 0.5rem 0.6rem;" aria-label="Logout">
+        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
       </button>
     `;
   } else {
     container.innerHTML = `
-      <button class="btn-icon" onclick="openAuthModal('login')">
-        🔑 ${currentLang === 'id' ? 'Masuk' : 'Login'}
+      <button class="btn-icon" onclick="openAuthModal('login')" aria-label="Login">
+        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
+        <span class="btn-label">${currentLang === 'id' ? 'Masuk' : 'Login'}</span>
       </button>
     `;
   }
+}
+
+// Render For Sale Catalog Grid
+function renderForSaleCatalog() {
+  const grid = document.getElementById('forSaleGrid');
+  if (!grid) return;
+
+  grid.innerHTML = FOR_SALE_ITEMS.map(item => {
+    const displayName = currentLang === 'id' ? (item.name_id || item.name) : item.name;
+    const displaySpecs = currentLang === 'id' ? (item.specs_id || item.specs) : item.specs;
+
+    const buyWAText = encodeURIComponent(`Halo KAMERAD Basecamp, saya berminat membeli produk baru: *${displayName}* (${formatRupiah(item.price)})`);
+    const waLink = `https://api.whatsapp.com/send?phone=${BASECAMP_WHATSAPP_NUMBER}&text=${buyWAText}`;
+
+    return `
+      <div class="service-card">
+        <div class="card-img-container">
+          <div class="promo-card-badge" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">NEW ITEM</div>
+          <img src="${item.image}" alt="${displayName}" class="card-img" loading="lazy">
+        </div>
+        <div class="card-body">
+          <h3 class="card-title">${displayName}</h3>
+          <div class="card-specs-row">
+            ${displaySpecs.map(s => `<span class="spec-chip">${s}</span>`).join('')}
+          </div>
+          <div class="card-pricing-row">
+            <div class="price-box">
+              <span class="rental-rate">${formatRupiah(item.price)}</span>
+            </div>
+          </div>
+          <a href="${waLink}" target="_blank" class="btn-primary" style="text-decoration: none; margin-top: 0.5rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+            🛒 ${currentLang === 'id' ? 'Beli via WhatsApp' : 'Buy via WhatsApp'}
+          </a>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Render Laundry Services Grid
+function renderLaundryServices() {
+  const grid = document.getElementById('laundryGrid');
+  if (!grid) return;
+
+  grid.innerHTML = LAUNDRY_SERVICES.map(srv => {
+    const displayName = currentLang === 'id' ? (srv.name_id || srv.name) : srv.name;
+    const displayDesc = currentLang === 'id' ? (srv.desc_id || srv.desc) : srv.desc;
+
+    const laundryWAText = encodeURIComponent(`Halo KAMERAD Basecamp, saya ingin pesan layanan cuci & perawatan alat: *${displayName}* (${formatRupiah(srv.price)})`);
+    const waLink = `https://api.whatsapp.com/send?phone=${BASECAMP_WHATSAPP_NUMBER}&text=${laundryWAText}`;
+
+    return `
+      <div class="service-card">
+        <div class="card-img-container">
+          <div class="category-card-badge" style="background: rgba(59, 130, 246, 0.85); color: #fff;">LAUNDRY & CARE</div>
+          <img src="${srv.image}" alt="${displayName}" class="card-img" loading="lazy">
+        </div>
+        <div class="card-body">
+          <h3 class="card-title">${displayName}</h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">${displayDesc}</p>
+          <div class="card-pricing-row">
+            <div class="price-box">
+              <span class="rental-rate">${formatRupiah(srv.price)}</span>
+            </div>
+          </div>
+          <a href="${waLink}" target="_blank" class="btn-primary" style="text-decoration: none; margin-top: 0.5rem; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
+            🧼 ${currentLang === 'id' ? 'Pesan Laundry' : 'Book Laundry'}
+          </a>
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
 // Customer Auth Modal Toggle
@@ -527,7 +698,7 @@ function handleCustomerRegister(event) {
 
   closeAuthModal();
   renderNavAuthButtons();
-  
+
   const custNameInput = document.getElementById('custNameInput');
   const custPhoneInput = document.getElementById('custPhoneInput');
   if (custNameInput) custNameInput.value = name;
@@ -670,7 +841,7 @@ function handleAdminLogin(event) {
 
     document.getElementById('adminLoginForm').style.display = 'none';
     document.getElementById('adminDashboardView').style.display = 'block';
-    
+
     renderNavAuthButtons();
     fetchAdminBookingsAndStock();
     showToast('Login Admin berhasil!', 'success');
@@ -755,7 +926,7 @@ async function fetchAdminBookingsAndStock() {
 function filterAdminBookings(status) {
   adminFilterStatus = status;
   document.querySelectorAll('#adminDashboardModal .filter-tab-btn').forEach(btn => btn.classList.remove('active'));
-  
+
   if (status === 'ALL') document.getElementById('btnFilterAllBookings').classList.add('active');
   if (status === 'PENDING') document.getElementById('btnFilterPendingBookings').classList.add('active');
   if (status === 'CONFIRMED') document.getElementById('btnFilterConfirmedBookings').classList.add('active');
@@ -764,7 +935,7 @@ function filterAdminBookings(status) {
   fetchAdminBookingsAndStock();
 }
 
-// Admin Update Booking Status (Deducts stock on CONFIRMED, restores on CANCELLED)
+// Admin Update Booking Status
 async function updateBookingStatusAdmin(rentalId, newStatus) {
   if (supabaseClient) {
     try {
@@ -774,14 +945,13 @@ async function updateBookingStatusAdmin(rentalId, newStatus) {
       });
 
       if (error) throw error;
-      fetchItemsFromSupabase(); // Silent refresh live stock
+      fetchItemsFromSupabase();
       showToast(`Status booking berhasil diubah ke ${newStatus}!`, 'success');
     } catch (err) {
       console.error('Error updating status in Supabase:', err);
     }
   }
 
-  // Update local backup state as fallback
   const localOrder = localBookings.find(b => b.id === rentalId || b.orderId === rentalId);
   if (localOrder) localOrder.status = newStatus;
 
@@ -828,7 +998,7 @@ function validateCODDateRule() {
       tomorrow.setDate(tomorrow.getDate() + 1);
       rentalDates.startDate = formatDateInput(tomorrow);
       document.getElementById('startDateInput').value = rentalDates.startDate;
-      
+
       const msg = currentLang === 'id' ? 'Pengambilan COD disesuaikan ke besok (Kebijakan Basecamp)' : 'COD pickup adjusted to tomorrow (Basecamp Policy)';
       showToast(msg, 'warning');
     }
@@ -1188,7 +1358,7 @@ function openCheckoutModal() {
   }
   validateCODDateRule();
   document.getElementById('cartBackdrop').classList.remove('active');
-  
+
   if (currentCustomer) {
     const custNameInput = document.getElementById('custNameInput');
     const custPhoneInput = document.getElementById('custPhoneInput');
@@ -1288,14 +1458,14 @@ async function submitOrderAndOpenWhatsApp(event) {
     waText += `👤 *Penyewa:* ${nameInput}\n`;
     waText += `📱 *WhatsApp:* ${phoneInput}\n`;
     waText += `📅 *Tanggal Sewa:* ${rentalDates.startDate} ➔ ${rentalDates.endDate} (${durationDays} Hari)\n\n`;
-    
+
     waText += `🎒 *ITEM SEWA:* \n`;
     cart.forEach(item => {
       const displayName = item.name_id || item.name;
       const itemTotal = getItemTotalCost(item, durationDays);
       waText += `• ${displayName} x${item.qty} (${formatRupiah(itemTotal)})\n`;
     });
-    
+
     waText += `\n💳 *METODE PEMBAYARAN:* ${paymentSelection.method === 'dp' ? `Down Payment (${paymentSelection.dpPercent}%)` : 'Full COD di Basecamp'}\n`;
     waText += `💰 *Total Biaya Sewa:* ${formatRupiah(grandTotal)}\n`;
     if (paymentSelection.method === 'dp') {
@@ -1318,13 +1488,13 @@ async function submitOrderAndOpenWhatsApp(event) {
     waText += `👤 *Customer:* ${nameInput}\n`;
     waText += `📱 *WhatsApp:* ${phoneInput}\n`;
     waText += `📅 *Rental Dates:* ${rentalDates.startDate} ➔ ${rentalDates.endDate} (${durationDays} Days)\n\n`;
-    
+
     waText += `🎒 *RENTAL ITEMS:* \n`;
     cart.forEach(item => {
       const itemTotal = getItemTotalCost(item, durationDays);
       waText += `• ${item.name} x${item.qty} (${formatRupiah(itemTotal)})\n`;
     });
-    
+
     waText += `\n💳 *PAYMENT METHOD:* ${paymentSelection.method === 'dp' ? `Down Payment (${paymentSelection.dpPercent}%)` : 'Full COD at Basecamp'}\n`;
     waText += `💰 *Grand Total:* ${formatRupiah(grandTotal)}\n`;
     if (paymentSelection.method === 'dp') {
@@ -1364,7 +1534,7 @@ function showToast(message, type = 'info') {
 
   const toast = document.createElement('div');
   toast.className = 'toast';
-  
+
   const iconSVG = type === 'warning' 
     ? `<svg width="20" height="20" fill="none" stroke="var(--amber-warning)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`
     : `<svg width="20" height="20" fill="none" stroke="var(--green-success)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
@@ -1407,5 +1577,7 @@ function setLanguage(lang) {
   });
 
   renderCatalog();
+  renderForSaleCatalog();
+  renderLaundryServices();
   updateCartUI();
 }
