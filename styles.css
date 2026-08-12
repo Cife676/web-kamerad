@@ -1,4 +1,4 @@
-/* KAMERAD basecamp edition - Design System & Mobile Hamburger Navigation */
+/* KAMERAD basecamp edition - Design System, Globe i18n & Person Auth Icons */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;600;700;800;900&display=swap');
 
 :root {
@@ -174,40 +174,61 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   gap: 0.4rem;
   flex-shrink: 0;
+  position: relative;
 }
 
-/* Language Switcher Toggle */
-.lang-switcher {
-  display: flex;
-  align-items: center;
+/* Globe Language Selector Dropdown */
+.lang-dropdown-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.lang-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-full);
-  padding: 2px;
-  gap: 2px;
-  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 160px;
+  z-index: 200;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  transition: all var(--transition-fast);
 }
 
-.lang-btn {
+.lang-dropdown-menu.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.lang-opt-btn {
   background: transparent;
   border: none;
-  color: var(--text-muted);
-  font-size: 0.76rem;
-  font-weight: 800;
-  padding: 4px 8px;
-  border-radius: var(--radius-full);
+  color: var(--text-main);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  min-height: 32px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 0.6rem;
+  width: 100%;
+  text-align: left;
   transition: var(--transition-fast);
 }
 
-.lang-btn.active {
-  background: var(--red-primary);
-  color: #ffffff;
-  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+.lang-opt-btn:hover, .lang-opt-btn.active {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--red-primary);
 }
 
 .btn-icon {
@@ -1035,79 +1056,6 @@ h1, h2, h3, h4, h5, h6 {
   color: #ffffff;
   padding-top: 0.4rem;
   border-top: 1px dashed var(--border-subtle);
-}
-
-/* Payment Selection */
-.payment-choice-box {
-  background: rgba(239, 68, 68, 0.05);
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  border-radius: var(--radius-md);
-  padding: 0.85rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-}
-
-.payment-choice-title {
-  font-size: 0.8rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  color: var(--red-primary);
-}
-
-.payment-options-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.6rem;
-}
-
-.payment-radio-card {
-  position: relative;
-  background: var(--bg-main);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  padding: 0.65rem;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
-.payment-radio-card input {
-  position: absolute;
-  top: 0.65rem;
-  right: 0.65rem;
-  width: 16px;
-  height: 16px;
-  accent-color: var(--red-primary);
-}
-
-.payment-radio-card.selected {
-  border-color: var(--red-primary);
-  background: rgba(239, 68, 68, 0.08);
-}
-
-.payment-opt-name {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: #ffffff;
-}
-
-.payment-opt-sub {
-  font-size: 0.7rem;
-  color: var(--text-muted);
-}
-
-.cod-warning-box {
-  background: rgba(245, 158, 11, 0.12);
-  border: 1px solid rgba(245, 158, 11, 0.35);
-  color: #fbbf24;
-  border-radius: var(--radius-md);
-  padding: 0.75rem;
-  font-size: 0.78rem;
-  line-height: 1.4;
-  display: flex;
-  gap: 0.5rem;
 }
 
 /* Modal Dialog Base for Mobile */
