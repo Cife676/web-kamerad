@@ -1,4 +1,4 @@
-/* KAMERAD DAJA - Application, Auth, i18n & 3D Coverflow Carousel Logic */
+/* KAMERAD basecamp edition - Application Logic, Auth, i18n & 3D Coverflow Carousel */
 
 // ============================================================
 // SUPABASE CONFIGURATION
@@ -23,8 +23,7 @@ const TRANSLATIONS = {
     nav_for_sale: 'For Sale',
     nav_laundry_service: 'Laundry Service',
     nav_account: 'Akun Saya / Login',
-    home_title: 'KAMERAD DAJA — WALK WITHIN WILD',
-    home_short_brief: 'Platform resmi petualangan outdoor, ekspedisi pendakian gunung, penyewaan alat mountaineering (Basecamp Edition), toko peralatan baru, dan layanan perawatan alat bekas pakai.',
+    home_title: 'KAMERAD basecamp edition',
     card_1_desc: 'Temukan dan sewa semua kebutuhan peralatan & perlengkapan pendakian Anda.',
     card_2_desc: 'Bergabung dalam trip alam seru bersama tim pendaki berpengalaman kami.',
     card_3_desc: 'Layanan cuci profesional, perawatan bulu angsa, waterproofing, dan perbaikan alat.',
@@ -33,13 +32,13 @@ const TRANSLATIONS = {
     promo_tag: 'PROMO SPESIAL',
     promo_text: '🔥 Diskon s/d 30% Paket Outdoor & Alat Gunung!',
     promo_sub: '• Reservasi Online • DP atau COD di Basecamp',
-    hero_tag: 'Rental Alat Gunung Resmi Basecamp',
-    hero_title_1: 'SIAPKAN PERLENGKAPAN',
-    hero_title_accent: 'PUNCAK',
-    hero_desc: 'Perlengkapan mountaineering performa tinggi, tenda 4-season, sleeping bag down, dan kerir teknikal. Reservasi online dengan Down Payment atau COD saat Pengambilan di Basecamp.',
-    hero_chip_1: 'Kualitas Alat Teruji',
-    hero_chip_2: 'COD Pengambilan H+1',
-    hero_chip_3: 'Konfirmasi WhatsApp Langsung',
+    hero_tag: 'OFFICIAL BASECAMP EQUIPMENT RENTAL',
+    hero_title_1: 'GEAR UP FOR THE',
+    hero_title_accent: 'SUMMIT',
+    hero_desc: 'High-performance mountaineering gear, 4-season geodesic tents, down bags, and technical packs. Reserve online with Down Payment or COD at Basecamp Pickup.',
+    hero_chip_1: 'Verified Gear Quality',
+    hero_chip_2: 'Next-Day BC Pickup for COD',
+    hero_chip_3: 'Direct WhatsApp Confirmation',
     search_dates_title: '🗓️ Pilih Tanggal Sewa',
     pickup_date_label: 'Tanggal Ambil',
     return_date_label: 'Tanggal Kembali',
@@ -93,8 +92,7 @@ const TRANSLATIONS = {
     nav_for_sale: 'For Sale',
     nav_laundry_service: 'Laundry Service',
     nav_account: 'My Account / Login',
-    home_title: 'KAMERAD DAJA — WALK WITHIN WILD',
-    home_short_brief: 'Official platform for outdoor adventures, mountain expedition trips, mountaineering gear rental (Basecamp Edition), retail gear store, and after adventure gear care services.',
+    home_title: 'KAMERAD basecamp edition',
     card_1_desc: 'Find and rent out your need of equipment and supplies for adventures',
     card_2_desc: 'Join adventurous nature trip together with our experienced teams',
     card_3_desc: 'Professional gear washing, down care, waterproofing, and repair',
@@ -103,7 +101,7 @@ const TRANSLATIONS = {
     promo_tag: 'SPECIAL PROMO',
     promo_text: '🔥 Up to 30% OFF Expedition Bundles & Solo Trekker Kits!',
     promo_sub: '• Reserve Online • Down Payment or Basecamp Pickup',
-    hero_tag: 'Official Basecamp Equipment Rental',
+    hero_tag: 'OFFICIAL BASECAMP EQUIPMENT RENTAL',
     hero_title_1: 'GEAR UP FOR THE',
     hero_title_accent: 'SUMMIT',
     hero_desc: 'High-performance mountaineering gear, 4-season geodesic tents, down bags, and technical packs. Reserve online with Down Payment or COD at Basecamp Pickup.',
@@ -384,6 +382,19 @@ document.addEventListener('DOMContentLoaded', () => {
   checkSecretAdminURL();
 });
 
+// ON-DEMAND SECTION SWITCHER (Display section only when requested via menu or carousel card)
+function showSection(sectionId) {
+  document.querySelectorAll('.content-section').forEach(sec => {
+    sec.classList.remove('active-section');
+  });
+
+  const targetEl = document.getElementById(sectionId);
+  if (targetEl) {
+    targetEl.classList.add('active-section');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
 // 3D Coverflow Carousel Handlers
 function renderCarousel() {
   const card0 = document.getElementById('carouselCard0');
@@ -428,13 +439,12 @@ function handleCardClick(cardIndex, actionTarget) {
     return;
   }
 
-  // If already central big card: navigate to section or trigger action!
+  // If already central big card: switch to section on-demand!
   if (actionTarget === 'trip') {
-    const tripWAText = encodeURIComponent(`Halo KAMERAD DAJA, saya tertarik mendaftar trip alam *Walk With Kamerad*. Boleh minta info pendaftaran & jadwal terdekat?`);
+    const tripWAText = encodeURIComponent(`Halo KAMERAD basecamp edition, saya tertarik mendaftar trip alam *Walk With Kamerad*. Boleh minta info pendaftaran & jadwal terdekat?`);
     window.open(`https://api.whatsapp.com/send?phone=${BASECAMP_WHATSAPP_NUMBER}&text=${tripWAText}`, '_blank');
   } else if (actionTarget) {
-    const targetEl = document.querySelector(actionTarget);
-    if (targetEl) targetEl.scrollIntoView({ behavior: 'smooth' });
+    showSection(actionTarget);
   }
 }
 
@@ -607,7 +617,7 @@ function renderForSaleCatalog() {
     const displayName = currentLang === 'id' ? (item.name_id || item.name) : item.name;
     const displaySpecs = currentLang === 'id' ? (item.specs_id || item.specs) : item.specs;
 
-    const buyWAText = encodeURIComponent(`Halo KAMERAD DAJA, saya berminat membeli produk baru: *${displayName}* (${formatRupiah(item.price)})`);
+    const buyWAText = encodeURIComponent(`Halo KAMERAD basecamp edition, saya berminat membeli produk baru: *${displayName}* (${formatRupiah(item.price)})`);
     const waLink = `https://api.whatsapp.com/send?phone=${BASECAMP_WHATSAPP_NUMBER}&text=${buyWAText}`;
 
     return `
@@ -644,7 +654,7 @@ function renderLaundryServices() {
     const displayName = currentLang === 'id' ? (srv.name_id || srv.name) : srv.name;
     const displayDesc = currentLang === 'id' ? (srv.desc_id || srv.desc) : srv.desc;
 
-    const laundryWAText = encodeURIComponent(`Halo KAMERAD DAJA, saya ingin pesan layanan cuci & perawatan alat: *${displayName}* (${formatRupiah(srv.price)})`);
+    const laundryWAText = encodeURIComponent(`Halo KAMERAD basecamp edition, saya ingin pesan layanan cuci & perawatan alat: *${displayName}* (${formatRupiah(srv.price)})`);
     const waLink = `https://api.whatsapp.com/send?phone=${BASECAMP_WHATSAPP_NUMBER}&text=${laundryWAText}`;
 
     return `
@@ -1493,7 +1503,7 @@ async function submitOrderAndOpenWhatsApp(event) {
     }
 
     waText += `----------------------------------------\n`;
-    waText += `Dikirim dari web app KAMERAD DAJA`;
+    waText += `Dikirim dari web app KAMERAD basecamp edition`;
   } else {
     waText += `🏕️ *RENTAL ORDER - KAMERAD BASECAMP*\n`;
     waText += `----------------------------------------\n`;
@@ -1522,7 +1532,7 @@ async function submitOrderAndOpenWhatsApp(event) {
     }
 
     waText += `----------------------------------------\n`;
-    waText += `Sent via KAMERAD DAJA web app`;
+    waText += `Sent via KAMERAD basecamp edition web app`;
   }
 
   const encodedWA = encodeURIComponent(waText);

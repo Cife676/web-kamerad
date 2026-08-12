@@ -7,8 +7,8 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>KAMERAD DAJA | WALK WITHIN WILD</title>
-  <meta name="description" content="Official platform for KAMERAD DAJA - WALK WITHIN WILD. Mountain expedition trips, basecamp equipment rental, outdoor gear store, and after adventure gear care services.">
+  <title>KAMERAD basecamp edition | Outdoor & Hiking Gear Rental</title>
+  <meta name="description" content="Official platform for KAMERAD basecamp edition. Mountain expedition trips, basecamp equipment rental, outdoor gear store, and after adventure gear care services.">
   
   <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
   <link rel="stylesheet" href="styles.css">
@@ -21,7 +21,7 @@
   <!-- Sticky Customer Brand Header -->
   <header class="header-sticky">
     <div class="nav-container">
-      <a href="#homeSection" class="brand-logo-link">
+      <a href="javascript:void(0)" onclick="showSection('homeSection')" class="brand-logo-link">
         <img src="assets/logo.svg" alt="KAMERAD basecamp edition logo" class="brand-logo-img">
         <div class="brand-title-group">
           <span class="brand-name">KAMERAD</span>
@@ -78,7 +78,7 @@
       <div class="nav-drawer-header">
         <div style="display: flex; align-items: center; gap: 0.5rem;">
           <img src="assets/logo.svg" alt="KAMERAD logo" style="height: 28px; width: auto;">
-          <span style="font-family: var(--font-display); font-weight: 800; color: #fff; letter-spacing: 1px;">KAMERAD DAJA</span>
+          <span style="font-family: var(--font-display); font-weight: 800; color: #fff; letter-spacing: 1px;">KAMERAD</span>
         </div>
         <button class="btn-close" onclick="closeMobileNav()">
           <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -88,32 +88,32 @@
       </div>
 
       <div class="nav-drawer-body">
-        <a href="#homeSection" class="nav-drawer-link" onclick="closeMobileNav()">
+        <div class="nav-drawer-link" onclick="closeMobileNav(); showSection('homeSection');">
           <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
           <span data-i18n="nav_home">Home</span>
-        </a>
+        </div>
 
-        <a href="#catalogSection" class="nav-drawer-link" onclick="closeMobileNav()">
+        <div class="nav-drawer-link" onclick="closeMobileNav(); showSection('catalogSection');">
           <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
           <span data-i18n="nav_rental_equipment">Rental Equipment</span>
-        </a>
+        </div>
 
-        <a href="#forSaleSection" class="nav-drawer-link" onclick="closeMobileNav()">
+        <div class="nav-drawer-link" onclick="closeMobileNav(); showSection('forSaleSection');">
           <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
           <span data-i18n="nav_for_sale">For Sale</span>
-        </a>
+        </div>
 
-        <a href="#laundrySection" class="nav-drawer-link" onclick="closeMobileNav()">
+        <div class="nav-drawer-link" onclick="closeMobileNav(); showSection('laundrySection');">
           <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
           <span data-i18n="nav_laundry_service">Laundry Service</span>
-        </a>
+        </div>
 
         <div style="border-top: 1px dashed var(--border-subtle); margin: 0.5rem 0;"></div>
 
-        <a href="#" class="nav-drawer-link" onclick="closeMobileNav(); openAuthModal('login'); return false;">
+        <div class="nav-drawer-link" onclick="closeMobileNav(); openAuthModal('login');">
           <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
           <span data-i18n="nav_account">Akun Saya / Login</span>
-        </a>
+        </div>
       </div>
     </div>
   </div>
@@ -127,8 +127,8 @@
     <span style="font-size: 0.85rem; opacity: 0.9;" class="desktop-only" data-i18n="promo_sub">• Reservasi Online • DP atau COD di Basecamp</span>
   </div>
 
-  <!-- 0. HOME SECTION (Official Hero Text + 3D Interactive Carousel) -->
-  <section class="home-section" id="homeSection">
+  <!-- 0. HOME SECTION (Active Landing Page) -->
+  <section class="home-section content-section active-section" id="homeSection">
     <div class="home-brief-box">
       <div class="badge-tag" style="margin: 0 auto;">
         <span class="pulse-dot"></span>
@@ -166,7 +166,7 @@
 
       <div class="coverflow-cards-stage" id="carouselStage">
         <!-- Card 1: Kamerad Basecamp (Rental) -->
-        <div class="carousel-card card-left" id="carouselCard0" onclick="handleCardClick(0, '#catalogSection')">
+        <div class="carousel-card card-left" id="carouselCard0" onclick="handleCardClick(0, 'catalogSection')">
           <div class="carousel-card-img-wrap">
             <img src="assets/tent_4season.jpg" alt="Kamerad Basecamp" class="carousel-card-img">
             <div class="carousel-card-overlay">
@@ -188,7 +188,7 @@
         </div>
 
         <!-- Card 3: After Adventure Services (Laundry & Care) -->
-        <div class="carousel-card card-right" id="carouselCard2" onclick="handleCardClick(2, '#laundrySection')">
+        <div class="carousel-card card-right" id="carouselCard2" onclick="handleCardClick(2, 'laundrySection')">
           <div class="carousel-card-img-wrap">
             <img src="assets/gear_care_banner.jpg" alt="After Adventure Services" class="carousel-card-img">
             <div class="carousel-card-overlay">
@@ -203,11 +203,32 @@
         <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
       </button>
     </div>
+
+    <!-- Social Media Section (Directly Below Carousel Image) -->
+    <div class="social-media-container">
+      <a href="https://instagram.com" target="_blank" class="social-chip">
+        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.5 6.5h.01"></path><rect width="20" height="20" x="2" y="2" rx="5" ry="5" stroke-width="2"></rect></svg>
+        <span>Instagram (@kamerad.daja)</span>
+      </a>
+      <a href="https://tiktok.com" target="_blank" class="social-chip">
+        <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.82.55-1.33 1.52-1.34 2.52.01 .88.47 1.73 1.2 2.22.77.53 1.76.67 2.65.4.87-.26 1.61-.95 1.95-1.8.18-.46.26-.96.26-1.46.01-5.46.01-10.91.01-16.36z"/></svg>
+        <span>TikTok (@kameraddaja)</span>
+      </a>
+      <a href="https://youtube.com" target="_blank" class="social-chip">
+        <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+        <span>YouTube (KAMERAD DAJA)</span>
+      </a>
+      <a href="https://api.whatsapp.com/send?phone=6282299318955" target="_blank" class="social-chip" style="border-color: rgba(16, 185, 129, 0.4); color: var(--green-success);">
+        <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-1.154 4.22 4.22-1.107z"/></svg>
+        <span>WhatsApp BC Support</span>
+      </a>
+    </div>
   </section>
 
-  <!-- Quick Rental Selector & Date Picker Bar -->
-  <section style="max-width: 1280px; margin: 0 auto; padding: 1rem 1.25rem 2rem 1.25rem;">
-    <div class="hero-search-card" style="background: var(--bg-surface);">
+  <!-- 1. Equipment Rental Catalog Section (On-Demand) -->
+  <section class="catalog-section content-section" id="catalogSection">
+    <!-- Quick Rental Selector & Date Picker Bar -->
+    <div class="hero-search-card" style="background: var(--bg-surface); margin-bottom: 2rem;">
       <div class="search-card-title">
         <span style="font-weight: 800; font-size: 1.05rem; color: #fff;" data-i18n="search_dates_title">🗓️ Pilih Tanggal Sewa</span>
         <span class="badge-tag" style="font-size: 0.7rem; padding: 2px 8px;" id="rentalDurationDaysLabel">2 Days</span>
@@ -229,10 +250,7 @@
         <input type="text" id="catalogSearchInput" class="search-input" placeholder="Cari alat (contoh: tenda 4 orang, kerir, kompor...)" data-i18n-placeholder="search_placeholder">
       </div>
     </div>
-  </section>
 
-  <!-- 1. Equipment Rental Catalog Section -->
-  <section class="catalog-section" id="catalogSection">
     <div class="section-header">
       <h2 class="section-title">
         <span data-i18n="nav_rental_equipment">Rental Equipment</span>
@@ -274,8 +292,8 @@
     </div>
   </section>
 
-  <!-- 2. For Sale Section (Peralatan Dijual) -->
-  <section class="service-section" id="forSaleSection" style="background: var(--bg-surface); border-y: 1px solid var(--border-subtle);">
+  <!-- 2. For Sale Section (On-Demand) -->
+  <section class="service-section content-section" id="forSaleSection" style="background: var(--bg-surface);">
     <div class="section-header">
       <h2 class="section-title">
         <span data-i18n="nav_for_sale">For Sale</span>
@@ -291,8 +309,8 @@
     </div>
   </section>
 
-  <!-- 3. Laundry Service Section (Layanan Cuci Alat) -->
-  <section class="service-section" id="laundrySection">
+  <!-- 3. Laundry Service Section (On-Demand) -->
+  <section class="service-section content-section" id="laundrySection">
     <div class="section-header">
       <h2 class="section-title">
         <span data-i18n="nav_laundry_service">Laundry Service</span>
@@ -308,7 +326,7 @@
     </div>
   </section>
 
-  <!-- Store Basecamp Info & Contact Section -->
+  <!-- Store Basecamp Info Section -->
   <section class="info-section">
     <div class="info-card">
       <div style="display: flex; align-items: center; gap: 0.75rem;">
@@ -353,35 +371,14 @@
     </div>
   </section>
 
-  <!-- Clean Customer Footer + Social Media Section -->
-  <footer style="border-top: 1px solid var(--border-subtle); padding: 2.5rem 1.25rem; text-align: center; color: var(--text-muted); font-size: 0.85rem; background: var(--bg-main);">
-    <div style="max-width: 1280px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+  <!-- Clean Customer Footer -->
+  <footer style="border-top: 1px solid var(--border-subtle); padding: 2rem 1.25rem; text-align: center; color: var(--text-muted); font-size: 0.85rem; background: var(--bg-main);">
+    <div style="max-width: 1280px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 0.6rem;">
       <div style="display: flex; align-items: center; gap: 0.6rem;">
-        <img src="assets/logo.svg" alt="KAMERAD DAJA logo" style="height: 28px; width: auto;">
-        <span style="font-family: var(--font-display); font-weight: 800; color: #fff; letter-spacing: 2px;">KAMERAD DAJA | WALK WITHIN WILD</span>
+        <img src="assets/logo.svg" alt="KAMERAD logo" style="height: 26px; width: auto;">
+        <span style="font-family: var(--font-display); font-weight: 800; color: #fff; letter-spacing: 2px;">KAMERAD basecamp edition</span>
       </div>
-
-      <!-- Social Media Links (Annotated in Mockup) -->
-      <div class="social-media-container">
-        <a href="https://instagram.com" target="_blank" class="social-chip">
-          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.5 6.5h.01"></path><rect width="20" height="20" x="2" y="2" rx="5" ry="5" stroke-width="2"></rect></svg>
-          <span>Instagram (@kamerad.daja)</span>
-        </a>
-        <a href="https://tiktok.com" target="_blank" class="social-chip">
-          <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.82.55-1.33 1.52-1.34 2.52.01 .88.47 1.73 1.2 2.22.77.53 1.76.67 2.65.4.87-.26 1.61-.95 1.95-1.8.18-.46.26-.96.26-1.46.01-5.46.01-10.91.01-16.36z"/></svg>
-          <span>TikTok (@kameraddaja)</span>
-        </a>
-        <a href="https://youtube.com" target="_blank" class="social-chip">
-          <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-          <span>YouTube (KAMERAD DAJA)</span>
-        </a>
-        <a href="https://api.whatsapp.com/send?phone=6282299318955" target="_blank" class="social-chip" style="border-color: rgba(16, 185, 129, 0.4); color: var(--green-success);">
-          <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-1.154 4.22 4.22-1.107z"/></svg>
-          <span>WhatsApp BC Support</span>
-        </a>
-      </div>
-
-      <p>© 2026 KAMERAD DAJA | WALK WITHIN WILD. All rights reserved. Built for extreme outdoor expeditions.</p>
+      <p>© 2026 KAMERAD basecamp edition. All rights reserved. Built for extreme outdoor expeditions.</p>
     </div>
   </footer>
 
