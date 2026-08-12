@@ -1004,12 +1004,75 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .cart-header {
-  padding: 1.25rem;
+  padding: 1rem 1.25rem 0.75rem 1.25rem;
   border-bottom: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
   justify-content: space-between;
   background: var(--bg-card);
+}
+
+/* Multi-Category Shopping Cart Drawer Tabs */
+.cart-tabs-bar {
+  display: flex;
+  gap: 0.35rem;
+  padding: 0.55rem 1.25rem;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.cart-tab-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.5rem 0.5rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  border-radius: var(--radius-md);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.cart-tab-btn:hover {
+  color: #fff;
+  background: var(--bg-surface-hover);
+}
+
+.cart-tab-btn.active {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: var(--red-primary);
+  color: #ffffff;
+}
+
+.cart-tab-btn#cartTabLaundry.active {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: #3b82f6;
+  color: #93c5fd;
+}
+
+.cart-tab-btn#cartTabSale.active {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: var(--green-success);
+  color: #6ee7b7;
+}
+
+.cart-tab-badge {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: var(--radius-full);
+}
+
+.cart-tab-btn.active .cart-tab-badge {
+  background: #ffffff;
+  color: #000000;
 }
 
 .cart-title-row {

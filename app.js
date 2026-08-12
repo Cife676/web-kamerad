@@ -178,6 +178,9 @@ let selectedTripForRegistration = null;
 let selectedLaundryService = null;
 let selectedLaundryDropOffDate = formatDateInput(new Date());
 
+// Multi-Category Active Cart Tab ('rental', 'laundry', 'sale')
+let activeCartTab = 'rental';
+
 // Gear Database
 let GEAR_CATALOG = [
   {
@@ -440,6 +443,12 @@ function showSection(sectionId) {
     targetEl.classList.add('active-section');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
+}
+
+// Multi-Category Cart Tab Switcher ('rental', 'laundry', 'sale')
+function switchCartTab(tabCat) {
+  activeCartTab = tabCat;
+  updateCartUI();
 }
 
 // 3D Coverflow Carousel Handlers
@@ -949,7 +958,7 @@ function renderLaundryModalContent() {
           🛒 Tambah ke Keranjang
         </button>
         <button type="button" class="btn-primary" onclick="submitConfiguredLaundryWA()" style="flex: 1; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border: none;">
-          <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-1.154 4.22 4.22-1.107z"/></svg>
+          <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-1.154 4.22 4.22-1.107z"/></svg>
           <span>Pesan via WhatsApp</span>
         </button>
       </div>
@@ -984,9 +993,10 @@ function addConfiguredLaundryToCart() {
     });
   }
 
+  activeCartTab = 'laundry';
   closeLaundryBookingModal();
   updateCartUI();
-  showToast(`Layanan "${displayName}" (Drop-off: ${selectedLaundryDropOffDate} ➔ Pick-up: ${pickUpDateStr}) ditambahkan ke keranjang!`, 'success');
+  showToast(`Layanan "${displayName}" ditambahkan ke Laundry Cart!`, 'success');
 }
 
 function submitConfiguredLaundryWA() {
@@ -996,7 +1006,7 @@ function submitConfiguredLaundryWA() {
   const displayName = currentLang === 'id' ? (selectedLaundryService.name_id || selectedLaundryService.name) : selectedLaundryService.name;
   const orderId = 'KMRD-LNDR-' + Math.floor(1000 + Math.random() * 9000);
 
-  const pName = currentCustomer ? currentCustomer.name : 'Penyewa Basecamp';
+  const pName = currentCustomer ? currentCustomer.name : 'Pemesan Laundry Basecamp';
   const pPhone = currentCustomer ? currentCustomer.phone : '';
 
   let waText = '';
@@ -1043,8 +1053,9 @@ function addToCart(itemId) {
     cart.push({ ...itemObj, qty: 1, itemType: 'rental' });
   }
 
+  activeCartTab = 'rental';
   updateCartUI();
-  const successMsg = currentLang === 'id' ? `"${displayName}" ditambahkan ke keranjang!` : `Added "${displayName}" to cart!`;
+  const successMsg = currentLang === 'id' ? `"${displayName}" ditambahkan ke Rent Cart!` : `Added "${displayName}" to Rent Cart!`;
   showToast(successMsg, 'success');
 }
 
@@ -1070,8 +1081,9 @@ function addSaleItemToCart(itemId) {
     });
   }
 
+  activeCartTab = 'sale';
   updateCartUI();
-  const msg = currentLang === 'id' ? `"${displayName}" ditambahkan ke keranjang!` : `Added "${displayName}" to cart!`;
+  const msg = currentLang === 'id' ? `"${displayName}" ditambahkan ke Sale Cart!` : `Added "${displayName}" to Sale Cart!`;
   showToast(msg, 'success');
 }
 
@@ -1547,69 +1559,161 @@ function changeQty(itemId, delta) {
   }
 }
 
-// Update Cart UI Drawer & Calculations
+// Update Cart UI Drawer & Category Tab Calculations
 function updateCartUI() {
   const cartBadge = document.getElementById('cartBadgeCount');
   const cartItemsList = document.getElementById('cartItemsList');
   const t = TRANSLATIONS[currentLang];
-  const totalItemCount = cart.reduce((sum, item) => sum + item.qty, 0);
+
+  // 1. Badge Counts for each category
+  const rentCount = cart.filter(i => (!i.itemType || i.itemType === 'rental')).reduce((sum, i) => sum + i.qty, 0);
+  const laundryCount = cart.filter(i => i.itemType === 'laundry').reduce((sum, i) => sum + i.qty, 0);
+  const saleCount = cart.filter(i => i.itemType === 'sale').reduce((sum, i) => sum + i.qty, 0);
+  const totalItemCount = rentCount + laundryCount + saleCount;
 
   if (cartBadge) cartBadge.innerText = totalItemCount;
 
-  const durationDays = getRentalDurationDays();
-  const durationLabel = document.getElementById('rentalDurationDaysLabel');
-  if (durationLabel) durationLabel.innerText = `${durationDays} ${currentLang === 'id' ? 'Hari' : 'Days'}`;
+  // Update Cart Drawer Tab Badges
+  const rentBadgeEl = document.getElementById('cartRentBadge');
+  const laundryBadgeEl = document.getElementById('cartLaundryBadge');
+  const saleBadgeEl = document.getElementById('cartSaleBadge');
 
-  const grandTotalRental = cart.reduce((sum, item) => sum + getItemTotalCost(item, durationDays), 0);
+  if (rentBadgeEl) rentBadgeEl.innerText = rentCount;
+  if (laundryBadgeEl) laundryBadgeEl.innerText = laundryCount;
+  if (saleBadgeEl) saleBadgeEl.innerText = saleCount;
 
-  const dpAmount = Math.round(grandTotalRental * (paymentSelection.dpPercent / 100));
-  const balanceAmount = grandTotalRental - dpAmount;
+  // Highlight Active Cart Tab Button
+  const btnRent = document.getElementById('cartTabRent');
+  const btnLaundry = document.getElementById('cartTabLaundry');
+  const btnSale = document.getElementById('cartTabSale');
 
-  document.getElementById('summarySubtotal').innerText = durationDays <= 2 
-    ? t.base_rate_text
-    : `${t.base_rate_text} + ${durationDays - 2} ${t.extra_days_text}`;
+  if (btnRent) btnRent.classList.toggle('active', activeCartTab === 'rental');
+  if (btnLaundry) btnLaundry.classList.toggle('active', activeCartTab === 'laundry');
+  if (btnSale) btnSale.classList.toggle('active', activeCartTab === 'sale');
 
-  document.getElementById('summaryGrandTotal').innerText = formatRupiah(grandTotalRental);
+  // Filter Cart Items based on activeCartTab
+  const activeTabItems = cart.filter(i => (i.itemType || 'rental') === activeCartTab);
 
+  // 2. Dynamic Overview Card & Payment Choice Box
+  const datesCard = document.querySelector('.cart-dates-card');
+  const paymentBox = document.querySelector('.payment-choice-box');
   const dpRow = document.getElementById('summaryDPAmountRow');
   const balanceRow = document.getElementById('summaryBalanceRow');
+  const subtotalRow = document.getElementById('summarySubtotal');
+  const grandTotalRow = document.getElementById('summaryGrandTotal');
+  const checkoutBtnSpan = document.querySelector('#cartBackdrop .cart-footer button span');
 
-  if (paymentSelection.method === 'dp') {
-    if (dpRow) {
-      dpRow.style.display = 'flex';
-      dpRow.querySelector('span:last-child').innerText = `${formatRupiah(dpAmount)} (${paymentSelection.dpPercent}%)`;
+  const durationDays = getRentalDurationDays();
+  const activeTabTotal = activeTabItems.reduce((sum, item) => sum + getItemTotalCost(item, durationDays), 0);
+
+  if (activeCartTab === 'rental') {
+    if (datesCard) {
+      datesCard.style.display = 'block';
+      datesCard.innerHTML = `
+        <div class="cart-dates-header">
+          <span data-i18n="cart_duration_header">📅 DURASI SEWA ALAT</span>
+          <span style="background: rgba(239, 68, 68, 0.2); color: #fff; padding: 2px 8px; border-radius: 4px; font-weight: 800;" id="rentalDurationDaysLabel">${durationDays} Days</span>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Tanggal sewa: <strong>${rentalDates.startDate} ➔ ${rentalDates.endDate}</strong> (${durationDays} Hari)</p>
+      `;
     }
-    if (balanceRow) {
-      balanceRow.style.display = 'flex';
-      balanceRow.querySelector('span:last-child').innerText = formatRupiah(balanceAmount);
+
+    if (paymentBox) paymentBox.style.display = 'block';
+
+    const dpAmount = Math.round(activeTabTotal * (paymentSelection.dpPercent / 100));
+    const balanceAmount = activeTabTotal - dpAmount;
+
+    if (subtotalRow) {
+      subtotalRow.innerText = durationDays <= 2 ? t.base_rate_text : `${t.base_rate_text} + ${durationDays - 2} ${t.extra_days_text}`;
     }
-  } else {
+    if (grandTotalRow) grandTotalRow.innerText = formatRupiah(activeTabTotal);
+
+    if (paymentSelection.method === 'dp') {
+      if (dpRow) {
+        dpRow.style.display = 'flex';
+        dpRow.querySelector('span:last-child').innerText = `${formatRupiah(dpAmount)} (${paymentSelection.dpPercent}%)`;
+      }
+      if (balanceRow) {
+        balanceRow.style.display = 'flex';
+        balanceRow.querySelector('span:first-child').innerText = 'Sisa Bayar saat Pengambilan:';
+        balanceRow.querySelector('span:last-child').innerText = formatRupiah(balanceAmount);
+      }
+    } else {
+      if (dpRow) dpRow.style.display = 'none';
+      if (balanceRow) {
+        balanceRow.style.display = 'flex';
+        balanceRow.querySelector('span:first-child').innerText = 'Jumlah COD di Basecamp:';
+        balanceRow.querySelector('span:last-child').innerText = `${formatRupiah(activeTabTotal)} (Full COD)`;
+      }
+    }
+
+    if (checkoutBtnSpan) checkoutBtnSpan.innerText = 'Lanjut Checkout Rent Cart →';
+
+  } else if (activeCartTab === 'laundry') {
+    if (datesCard) {
+      datesCard.style.display = 'block';
+      const sampleLaundry = activeTabItems.find(i => i.dropOffDate);
+      const dropStr = sampleLaundry ? sampleLaundry.dropOffDate : formatDateInput(new Date());
+      const pickStr = sampleLaundry ? sampleLaundry.pickUpDate : getCalculatedLaundryPickUpDate(dropStr);
+
+      datesCard.innerHTML = `
+        <div class="cart-dates-header">
+          <span style="color: #60a5fa; font-weight: 800;">⏱️ JADWAL LAUNDRY & CARE</span>
+          <span style="background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 2px 8px; border-radius: 4px; font-weight: 800;">Standard (3 Hari)</span>
+        </div>
+        <p style="font-size: 0.8rem; color: #93c5fd; margin-top: 4px;">Tanggal Antar: <strong>${dropStr}</strong> ➔ Selesai: <strong>${pickStr}</strong></p>
+      `;
+    }
+
+    if (paymentBox) paymentBox.style.display = 'none';
     if (dpRow) dpRow.style.display = 'none';
-    if (balanceRow) {
-      balanceRow.style.display = 'flex';
-      balanceRow.querySelector('span:first-child').innerText = currentLang === 'id' ? 'Jumlah COD di Basecamp' : 'COD Amount on Pickup';
-      balanceRow.querySelector('span:last-child').innerText = `${formatRupiah(grandTotalRental)} (Full COD)`;
+    if (balanceRow) balanceRow.style.display = 'none';
+
+    if (subtotalRow) subtotalRow.innerText = 'Tarif Cuci & Care';
+    if (grandTotalRow) grandTotalRow.innerText = formatRupiah(activeTabTotal);
+    if (checkoutBtnSpan) checkoutBtnSpan.innerText = 'Lanjut Checkout Laundry Cart →';
+
+  } else if (activeCartTab === 'sale') {
+    if (datesCard) {
+      datesCard.style.display = 'block';
+      datesCard.innerHTML = `
+        <div class="cart-dates-header">
+          <span style="color: var(--green-success); font-weight: 800;">🏷️ PEMBELIAN PERALATAN BARU</span>
+          <span style="background: rgba(16, 185, 129, 0.2); color: var(--green-success); padding: 2px 8px; border-radius: 4px; font-weight: 800;">For Sale</span>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Produk outdoor original & aksesoris gunung siap pakai.</p>
+      `;
     }
+
+    if (paymentBox) paymentBox.style.display = 'none';
+    if (dpRow) dpRow.style.display = 'none';
+    if (balanceRow) balanceRow.style.display = 'none';
+
+    if (subtotalRow) subtotalRow.innerText = 'Total Produk';
+    if (grandTotalRow) grandTotalRow.innerText = formatRupiah(activeTabTotal);
+    if (checkoutBtnSpan) checkoutBtnSpan.innerText = 'Lanjut Checkout Sale Cart →';
   }
 
+  // 3. Render Items List for Active Tab
   if (!cartItemsList) return;
 
-  if (cart.length === 0) {
+  if (activeTabItems.length === 0) {
+    const tabName = activeCartTab === 'rental' ? 'Rent Cart' : activeCartTab === 'laundry' ? 'Laundry Cart' : 'Sale Cart';
     cartItemsList.innerHTML = `
       <div style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
         <svg width="40" height="40" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin: 0 auto 0.75rem auto; opacity: 0.4;">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
         </svg>
-        <p style="font-weight: 600;">${currentLang === 'id' ? 'Keranjang sewa Anda kosong' : 'Your rental cart is empty'}</p>
+        <p style="font-weight: 600;">${tabName} Anda kosong</p>
       </div>
     `;
     return;
   }
 
-  cartItemsList.innerHTML = cart.map(item => {
+  cartItemsList.innerHTML = activeTabItems.map(item => {
     const displayName = currentLang === 'id' ? (item.name_id || item.name) : item.name;
     const itemTotal = getItemTotalCost(item, durationDays);
-    
+
     let typeBadgeHTML = `<span class="spec-chip" style="background: rgba(239, 68, 68, 0.15); color: var(--red-primary); font-size: 0.65rem; font-weight: 800;">RENTAL</span>`;
     let rateDetailText = `${formatRupiah(item.priceBase2Days)} / 2 Days`;
 
@@ -1754,9 +1858,10 @@ function closeQuickView() {
 
 // Modal Toggle Handlers
 function openCheckoutModal() {
-  if (cart.length === 0) {
-    const msg = currentLang === 'id' ? 'Keranjang sewa Anda kosong!' : 'Your rental cart is empty!';
-    showToast(msg, 'warning');
+  const activeTabItems = cart.filter(i => (i.itemType || 'rental') === activeCartTab);
+  if (activeTabItems.length === 0) {
+    const tabName = activeCartTab === 'rental' ? 'Rent Cart' : activeCartTab === 'laundry' ? 'Laundry Cart' : 'Sale Cart';
+    showToast(`${tabName} Anda kosong!`, 'warning');
     return;
   }
   validateCODDateRule();
@@ -1776,9 +1881,16 @@ function closeCheckoutModal() {
   document.getElementById('checkoutModal').classList.remove('active');
 }
 
-// Submit Order: Category-Aware Receipt Formatting
+// Submit Order: Category-Aware Receipt Formatting based on Active Cart Tab
 async function submitOrderAndOpenWhatsApp(event) {
   event.preventDefault();
+
+  const activeTabItems = cart.filter(i => (i.itemType || 'rental') === activeCartTab);
+
+  if (activeTabItems.length === 0) {
+    showToast('Keranjang kategori ini kosong!', 'warning');
+    return;
+  }
 
   const nameInput = document.getElementById('custNameInput').value.trim();
   const phoneInput = document.getElementById('custPhoneInput').value.trim();
@@ -1792,13 +1904,15 @@ async function submitOrderAndOpenWhatsApp(event) {
   }
 
   const durationDays = getRentalDurationDays();
-  const hasRentalItems = cart.some(item => !item.itemType || item.itemType === 'rental');
-
-  const grandTotal = cart.reduce((sum, item) => sum + getItemTotalCost(item, durationDays), 0);
+  const grandTotal = activeTabItems.reduce((sum, item) => sum + getItemTotalCost(item, durationDays), 0);
   const dpAmount = Math.round(grandTotal * (paymentSelection.dpPercent / 100));
   const balanceAmount = paymentSelection.method === 'dp' ? (grandTotal - dpAmount) : grandTotal;
 
-  const orderId = 'KMRD-' + Math.floor(1000 + Math.random() * 9000);
+  let orderPrefix = 'KMRD-';
+  if (activeCartTab === 'laundry') orderPrefix = 'KMRD-LNDR-';
+  if (activeCartTab === 'sale') orderPrefix = 'KMRD-SALE-';
+
+  const orderId = orderPrefix + Math.floor(1000 + Math.random() * 9000);
 
   // 1. Silent Booking Log in Supabase with PENDING Status
   if (supabaseClient) {
@@ -1808,15 +1922,15 @@ async function submitOrderAndOpenWhatsApp(event) {
         p_customer_name: nameInput,
         p_customer_phone: phoneInput,
         p_customer_email: customerEmail,
-        p_start_date: hasRentalItems ? rentalDates.startDate : null,
-        p_end_date: hasRentalItems ? rentalDates.endDate : null,
-        p_duration_days: hasRentalItems ? durationDays : 0,
+        p_start_date: activeCartTab === 'rental' ? rentalDates.startDate : null,
+        p_end_date: activeCartTab === 'rental' ? rentalDates.endDate : null,
+        p_duration_days: activeCartTab === 'rental' ? durationDays : 0,
         p_payment_method: paymentSelection.method,
         p_grand_total: grandTotal,
         p_dp_amount: dpAmount,
         p_balance_amount: balanceAmount,
         p_notes: notesInput,
-        p_items: cart.map(c => ({ id: c.id, name: c.name, qty: c.qty, itemType: c.itemType || 'rental', itemTotal: getItemTotalCost(c, durationDays), image: c.image }))
+        p_items: activeTabItems.map(c => ({ id: c.id, name: c.name, qty: c.qty, itemType: c.itemType || 'rental', itemTotal: getItemTotalCost(c, durationDays), image: c.image }))
       });
 
       if (error) throw error;
@@ -1831,112 +1945,84 @@ async function submitOrderAndOpenWhatsApp(event) {
     customerName: nameInput,
     phone: phoneInput,
     customerEmail,
-    startDate: hasRentalItems ? rentalDates.startDate : 'N/A',
-    endDate: hasRentalItems ? rentalDates.endDate : 'N/A',
-    durationDays: hasRentalItems ? durationDays : 0,
+    startDate: activeCartTab === 'rental' ? rentalDates.startDate : 'N/A',
+    endDate: activeCartTab === 'rental' ? rentalDates.endDate : 'N/A',
+    durationDays: activeCartTab === 'rental' ? durationDays : 0,
     paymentMethod: paymentSelection.method,
     grandTotal,
     dpAmount,
     balanceAmount,
     status: 'PENDING',
-    items: cart.map(c => `[${(c.itemType || 'rental').toUpperCase()}] ${c.name} (x${c.qty})`).join(', ')
+    items: activeTabItems.map(c => `[${(c.itemType || 'rental').toUpperCase()}] ${c.name} (x${c.qty})`).join(', ')
   });
   localStorage.setItem('kmrd_local_bookings', JSON.stringify(localBookings));
 
   // 2. Category-Aware WhatsApp Message Construction
   let waText = '';
-  if (currentLang === 'id') {
-    if (hasRentalItems) {
-      waText += `🏕️ *PESANAN SEWA - KAMERAD BASECAMP*\n`;
-      waText += `----------------------------------------\n`;
-      waText += `📋 *Order ID:* #${orderId}\n`;
-      waText += `👤 *Penyewa:* ${nameInput}\n`;
-      waText += `📱 *WhatsApp:* ${phoneInput}\n`;
-      waText += `📅 *Tanggal Sewa:* ${rentalDates.startDate} ➔ ${rentalDates.endDate} (${durationDays} Hari)\n\n`;
-    } else {
-      waText += `🛒 *PESANAN PEMBELIAN & LAYANAN - KAMERAD BASECAMP*\n`;
-      waText += `----------------------------------------\n`;
-      waText += `📋 *Order ID:* #${orderId}\n`;
-      waText += `👤 *Nama Pemesan:* ${nameInput}\n`;
-      waText += `📱 *WhatsApp:* ${phoneInput}\n\n`;
-    }
-
-    waText += `🎒 *DAFTAR ITEM / LAYANAN:* \n`;
-    cart.forEach(item => {
+  if (activeCartTab === 'rental') {
+    waText += `🏕️ *PESANAN SEWA ALAT - KAMERAD BASECAMP*\n`;
+    waText += `----------------------------------------\n`;
+    waText += `📋 *Order ID:* #${orderId}\n`;
+    waText += `👤 *Penyewa:* ${nameInput}\n`;
+    waText += `📱 *WhatsApp:* ${phoneInput}\n`;
+    waText += `📅 *Tanggal Sewa:* ${rentalDates.startDate} ➔ ${rentalDates.endDate} (${durationDays} Hari)\n\n`;
+    waText += `🎒 *DAFTAR ITEM SEWA:* \n`;
+    activeTabItems.forEach(item => {
       const displayName = item.name_id || item.name;
       const itemTotal = getItemTotalCost(item, durationDays);
-      let typeTag = item.itemType ? `[${item.itemType.toUpperCase()}] ` : '[RENTAL] ';
-      let extraDetail = '';
-      if (item.itemType === 'laundry' && item.dropOffDate) {
-        extraDetail = ` (Drop: ${item.dropOffDate} ➔ Pick: ${item.pickUpDate})`;
-      }
-      waText += `• ${typeTag}${displayName}${extraDetail} x${item.qty} (${formatRupiah(itemTotal)})\n`;
+      waText += `• ${displayName} x${item.qty} (${formatRupiah(itemTotal)})\n`;
     });
-
     waText += `\n💳 *METODE PEMBAYARAN:* ${paymentSelection.method === 'dp' ? `Down Payment (${paymentSelection.dpPercent}%)` : 'Full COD / Tunai di Basecamp'}\n`;
-    waText += `💰 *Total Biaya Pesanan:* ${formatRupiah(grandTotal)}\n`;
+    waText += `💰 *Total Biaya Sewa:* ${formatRupiah(grandTotal)}\n`;
     if (paymentSelection.method === 'dp') {
       waText += `💵 *Down Payment (DP):* ${formatRupiah(dpAmount)}\n`;
       waText += `💸 *Sisa Pembayaran di Basecamp:* ${formatRupiah(balanceAmount)}\n`;
-    } else if (hasRentalItems) {
+    } else {
       waText += `📌 *Catatan COD:* Pengambilan barang di Basecamp pada tanggal ${rentalDates.startDate}\n`;
     }
-
-    if (notesInput) {
-      waText += `\n📝 *Catatan Tambahan:* ${notesInput}\n`;
-    }
-
+  } else if (activeCartTab === 'laundry') {
+    waText += `🧼 *PESANAN LAUNDRY & CARE - KAMERAD BASECAMP*\n`;
     waText += `----------------------------------------\n`;
-    waText += `Dikirim dari web app KAMERAD basecamp edition`;
-  } else {
-    if (hasRentalItems) {
-      waText += `🏕️ *RENTAL ORDER - KAMERAD BASECAMP*\n`;
-      waText += `----------------------------------------\n`;
-      waText += `📋 *Order ID:* #${orderId}\n`;
-      waText += `👤 *Customer:* ${nameInput}\n`;
-      waText += `📱 *WhatsApp:* ${phoneInput}\n`;
-      waText += `📅 *Rental Dates:* ${rentalDates.startDate} ➔ ${rentalDates.endDate} (${durationDays} Days)\n\n`;
-    } else {
-      waText += `🛒 *PURCHASE & SERVICE ORDER - KAMERAD BASECAMP*\n`;
-      waText += `----------------------------------------\n`;
-      waText += `📋 *Order ID:* #${orderId}\n`;
-      waText += `👤 *Customer:* ${nameInput}\n`;
-      waText += `📱 *WhatsApp:* ${phoneInput}\n\n`;
-    }
-
-    waText += `🎒 *ORDERED ITEMS:* \n`;
-    cart.forEach(item => {
+    waText += `📋 *Order ID:* #${orderId}\n`;
+    waText += `👤 *Nama Pemesan:* ${nameInput}\n`;
+    waText += `📱 *WhatsApp:* ${phoneInput}\n\n`;
+    waText += `🧺 *DAFTAR LAYANAN LAUNDRY:* \n`;
+    activeTabItems.forEach(item => {
+      const displayName = item.name_id || item.name;
       const itemTotal = getItemTotalCost(item, durationDays);
-      let typeTag = item.itemType ? `[${item.itemType.toUpperCase()}] ` : '[RENTAL] ';
-      let extraDetail = '';
-      if (item.itemType === 'laundry' && item.dropOffDate) {
-        extraDetail = ` (Drop: ${item.dropOffDate} ➔ Pick: ${item.pickUpDate})`;
+      waText += `• ${displayName} x${item.qty} (${formatRupiah(itemTotal)})\n`;
+      if (item.dropOffDate) {
+        waText += `  📅 Drop-off: ${item.dropOffDate} ➔ Pick-up Selesai: ${item.pickUpDate}\n`;
       }
-      waText += `• ${typeTag}${item.name}${extraDetail} x${item.qty} (${formatRupiah(itemTotal)})\n`;
     });
-
-    waText += `\n💳 *PAYMENT METHOD:* ${paymentSelection.method === 'dp' ? `Down Payment (${paymentSelection.dpPercent}%)` : 'Full COD / Cash at Basecamp'}\n`;
-    waText += `💰 *Grand Total:* ${formatRupiah(grandTotal)}\n`;
-    if (paymentSelection.method === 'dp') {
-      waText += `💵 *Down Payment Required:* ${formatRupiah(dpAmount)}\n`;
-      waText += `💸 *Remaining Balance at Pickup:* ${formatRupiah(balanceAmount)}\n`;
-    } else if (hasRentalItems) {
-      waText += `📌 *COD Pickup Note:* Pickup scheduled for ${rentalDates.startDate} at Basecamp BC\n`;
-    }
-
-    if (notesInput) {
-      waText += `\n📝 *Notes:* ${notesInput}\n`;
-    }
-
+    waText += `\n💰 *Total Biaya Laundry:* ${formatRupiah(grandTotal)}\n`;
+  } else if (activeCartTab === 'sale') {
+    waText += `🛒 *PEMBELIAN ALAT BARU - KAMERAD BASECAMP*\n`;
     waText += `----------------------------------------\n`;
-    waText += `Sent via KAMERAD basecamp edition web app`;
+    waText += `📋 *Order ID:* #${orderId}\n`;
+    waText += `👤 *Nama Pembeli:* ${nameInput}\n`;
+    waText += `📱 *WhatsApp:* ${phoneInput}\n\n`;
+    waText += `🏷️ *DAFTAR PRODUK DIBELI:* \n`;
+    activeTabItems.forEach(item => {
+      const displayName = item.name_id || item.name;
+      const itemTotal = getItemTotalCost(item, durationDays);
+      waText += `• ${displayName} x${item.qty} (${formatRupiah(itemTotal)})\n`;
+    });
+    waText += `\n💰 *Total Pembelian:* ${formatRupiah(grandTotal)}\n`;
   }
 
-  closeCheckoutModal();
-  const successToast = currentLang === 'id' ? 'Pesanan dikonfirmasi! Membuka WhatsApp Basecamp...' : 'Order confirmed! Opening Basecamp WhatsApp...';
-  showToast(successToast, 'success');
+  if (notesInput) {
+    waText += `\n📝 *Catatan Tambahan:* ${notesInput}\n`;
+  }
 
-  cart = [];
+  waText += `----------------------------------------\n`;
+  waText += `Dikirim dari web app KAMERAD basecamp edition`;
+
+  closeCheckoutModal();
+  showToast('Pesanan dikonfirmasi! Membuka WhatsApp Basecamp...', 'success');
+
+  // Remove checked out items from cart
+  cart = cart.filter(i => (i.itemType || 'rental') !== activeCartTab);
   updateCartUI();
 
   // Instant iOS Safari & Android compatible WhatsApp redirect
