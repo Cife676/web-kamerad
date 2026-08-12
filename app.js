@@ -8,7 +8,7 @@ const SUPABASE_URL = 'https://pykyaapmagmgoihfzyfr.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_Ykw4aeWnJZ-SWw8ysAY2ng_AOwAuNW3';
 
 // Basecamp WhatsApp Contact Config
-const BASECAMP_WHATSAPP_NUMBER = '6282299318955';
+const BASECAMP_WHATSAPP_NUMBER = '6281803590667';
 
 // Admin Credentials
 const ADMIN_USERNAME_CRED = 'Kamerad';
