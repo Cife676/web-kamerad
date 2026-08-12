@@ -756,16 +756,32 @@ function submitTripRegistrationWA(event) {
     return;
   }
 
+  const orderId = 'KMRD-TRIP-' + Math.floor(1000 + Math.random() * 9000);
+
   let waText = '';
-  waText += `⛰️ *PENDAFTARAN OPEN TRIP - KAMERAD BASECAMP*\n`;
-  waText += `----------------------------------------\n`;
-  waText += `🏔️ *Ekspedisi:* ${selectedTripForRegistration.title}\n`;
-  waText += `🗓️ *Jadwal:* ${selectedTripForRegistration.dateRange} (${selectedTripForRegistration.duration})\n`;
-  waText += `💰 *Biaya:* ${formatRupiah(selectedTripForRegistration.price)} / pax\n\n`;
-  waText += `👤 *Nama Peserta:* ${pName}\n`;
-  waText += `📱 *WhatsApp:* ${pPhone}\n`;
-  waText += `----------------------------------------\n`;
-  waText += `Halo tim KAMERAD, saya mengonfirmasi pendaftaran untuk Open Trip ini!`;
+  if (currentLang === 'id') {
+    waText += `⛰️ *PENDAFTARAN OPEN TRIP - KAMERAD BASECAMP*\n`;
+    waText += `----------------------------------------\n`;
+    waText += `📋 *Order ID:* #${orderId}\n`;
+    waText += `🏔️ *Ekspedisi:* ${selectedTripForRegistration.title}\n`;
+    waText += `🗓️ *Jadwal Ekspedisi:* ${selectedTripForRegistration.dateRange} (${selectedTripForRegistration.duration})\n`;
+    waText += `💰 *Biaya Ekspedisi:* ${formatRupiah(selectedTripForRegistration.price)} / pax\n\n`;
+    waText += `👤 *Nama Peserta:* ${pName}\n`;
+    waText += `📱 *WhatsApp:* ${pPhone}\n`;
+    waText += `----------------------------------------\n`;
+    waText += `Halo tim KAMERAD, saya mengonfirmasi pendaftaran untuk Open Trip ini!`;
+  } else {
+    waText += `⛰️ *OPEN TRIP REGISTRATION - KAMERAD BASECAMP*\n`;
+    waText += `----------------------------------------\n`;
+    waText += `📋 *Order ID:* #${orderId}\n`;
+    waText += `🏔️ *Expedition:* ${selectedTripForRegistration.title}\n`;
+    waText += `🗓️ *Schedule:* ${selectedTripForRegistration.dateRange} (${selectedTripForRegistration.duration})\n`;
+    waText += `💰 *Expedition Fee:* ${formatRupiah(selectedTripForRegistration.price)} / pax\n\n`;
+    waText += `👤 *Participant Name:* ${pName}\n`;
+    waText += `📱 *WhatsApp:* ${pPhone}\n`;
+    waText += `----------------------------------------\n`;
+    waText += `Hello KAMERAD team, I confirm my registration for this Open Trip!`;
+  }
 
   closeOpenTripConfirmModal();
   showToast('Membuka WhatsApp Basecamp...', 'success');
@@ -1627,7 +1643,7 @@ function closeCheckoutModal() {
   document.getElementById('checkoutModal').classList.remove('active');
 }
 
-// Submit Order: Silent Stock Log in Supabase + Open WhatsApp
+// Submit Order: Category-Aware Receipt Formatting (Includes Order ID across all!)
 async function submitOrderAndOpenWhatsApp(event) {
   event.preventDefault();
 
@@ -1642,20 +1658,9 @@ async function submitOrderAndOpenWhatsApp(event) {
     return;
   }
 
-  // Stock pre-check for rental items
-  for (const cartItem of cart) {
-    if (cartItem.itemType === 'rental') {
-      const catalogItem = GEAR_CATALOG.find(i => i.id === cartItem.id);
-      if (catalogItem && catalogItem.stock < cartItem.qty) {
-        const displayName = currentLang === 'id' ? (catalogItem.name_id || catalogItem.name) : catalogItem.name;
-        const msg = currentLang === 'id' ? `Stok "${displayName}" tidak mencukupi. Tersisa ${catalogItem.stock}.` : `Insufficient stock for "${displayName}". Only ${catalogItem.stock} available.`;
-        showToast(msg, 'warning');
-        return;
-      }
-    }
-  }
-
   const durationDays = getRentalDurationDays();
+  const hasRentalItems = cart.some(item => !item.itemType || item.itemType === 'rental');
+
   const grandTotal = cart.reduce((sum, item) => sum + getItemTotalCost(item, durationDays), 0);
   const dpAmount = Math.round(grandTotal * (paymentSelection.dpPercent / 100));
   const balanceAmount = paymentSelection.method === 'dp' ? (grandTotal - dpAmount) : grandTotal;
@@ -1670,9 +1675,9 @@ async function submitOrderAndOpenWhatsApp(event) {
         p_customer_name: nameInput,
         p_customer_phone: phoneInput,
         p_customer_email: customerEmail,
-        p_start_date: rentalDates.startDate,
-        p_end_date: rentalDates.endDate,
-        p_duration_days: durationDays,
+        p_start_date: hasRentalItems ? rentalDates.startDate : null,
+        p_end_date: hasRentalItems ? rentalDates.endDate : null,
+        p_duration_days: hasRentalItems ? durationDays : 0,
         p_payment_method: paymentSelection.method,
         p_grand_total: grandTotal,
         p_dp_amount: dpAmount,
@@ -1693,9 +1698,9 @@ async function submitOrderAndOpenWhatsApp(event) {
     customerName: nameInput,
     phone: phoneInput,
     customerEmail,
-    startDate: rentalDates.startDate,
-    endDate: rentalDates.endDate,
-    durationDays,
+    startDate: hasRentalItems ? rentalDates.startDate : 'N/A',
+    endDate: hasRentalItems ? rentalDates.endDate : 'N/A',
+    durationDays: hasRentalItems ? durationDays : 0,
     paymentMethod: paymentSelection.method,
     grandTotal,
     dpAmount,
@@ -1705,30 +1710,38 @@ async function submitOrderAndOpenWhatsApp(event) {
   });
   localStorage.setItem('kmrd_local_bookings', JSON.stringify(localBookings));
 
-  // 2. Construct Detailed WhatsApp Message
+  // 2. Category-Aware WhatsApp Message Construction
   let waText = '';
   if (currentLang === 'id') {
-    waText += `🏕️ *PESANAN BASECAMP - KAMERAD*\n`;
-    waText += `----------------------------------------\n`;
-    waText += `📋 *Order ID:* #${orderId}\n`;
-    waText += `👤 *Penyewa:* ${nameInput}\n`;
-    waText += `📱 *WhatsApp:* ${phoneInput}\n`;
-    waText += `📅 *Tanggal Sewa:* ${rentalDates.startDate} ➔ ${rentalDates.endDate} (${durationDays} Hari)\n\n`;
+    if (hasRentalItems) {
+      waText += `🏕️ *PESANAN SEWA - KAMERAD BASECAMP*\n`;
+      waText += `----------------------------------------\n`;
+      waText += `📋 *Order ID:* #${orderId}\n`;
+      waText += `👤 *Penyewa:* ${nameInput}\n`;
+      waText += `📱 *WhatsApp:* ${phoneInput}\n`;
+      waText += `📅 *Tanggal Sewa:* ${rentalDates.startDate} ➔ ${rentalDates.endDate} (${durationDays} Hari)\n\n`;
+    } else {
+      waText += `🛒 *PESANAN PEMBELIAN & LAYANAN - KAMERAD BASECAMP*\n`;
+      waText += `----------------------------------------\n`;
+      waText += `📋 *Order ID:* #${orderId}\n`;
+      waText += `👤 *Nama Pemesan:* ${nameInput}\n`;
+      waText += `📱 *WhatsApp:* ${phoneInput}\n\n`;
+    }
 
-    waText += `🎒 *ITEM DALAM KERANJANG:* \n`;
+    waText += `🎒 *DAFTAR ITEM / LAYANAN:* \n`;
     cart.forEach(item => {
       const displayName = item.name_id || item.name;
       const itemTotal = getItemTotalCost(item, durationDays);
-      let typeTag = item.itemType ? `[${item.itemType.toUpperCase()}] ` : '';
+      let typeTag = item.itemType ? `[${item.itemType.toUpperCase()}] ` : '[RENTAL] ';
       waText += `• ${typeTag}${displayName} x${item.qty} (${formatRupiah(itemTotal)})\n`;
     });
 
-    waText += `\n💳 *METODE PEMBAYARAN:* ${paymentSelection.method === 'dp' ? `Down Payment (${paymentSelection.dpPercent}%)` : 'Full COD di Basecamp'}\n`;
+    waText += `\n💳 *METODE PEMBAYARAN:* ${paymentSelection.method === 'dp' ? `Down Payment (${paymentSelection.dpPercent}%)` : 'Full COD / Tunai di Basecamp'}\n`;
     waText += `💰 *Total Biaya Pesanan:* ${formatRupiah(grandTotal)}\n`;
     if (paymentSelection.method === 'dp') {
       waText += `💵 *Down Payment (DP):* ${formatRupiah(dpAmount)}\n`;
       waText += `💸 *Sisa Pembayaran di Basecamp:* ${formatRupiah(balanceAmount)}\n`;
-    } else {
+    } else if (hasRentalItems) {
       waText += `📌 *Catatan COD:* Pengambilan barang di Basecamp pada tanggal ${rentalDates.startDate}\n`;
     }
 
@@ -1739,26 +1752,34 @@ async function submitOrderAndOpenWhatsApp(event) {
     waText += `----------------------------------------\n`;
     waText += `Dikirim dari web app KAMERAD basecamp edition`;
   } else {
-    waText += `🏕️ *BASECAMP ORDER - KAMERAD*\n`;
-    waText += `----------------------------------------\n`;
-    waText += `📋 *Order ID:* #${orderId}\n`;
-    waText += `👤 *Customer:* ${nameInput}\n`;
-    waText += `📱 *WhatsApp:* ${phoneInput}\n`;
-    waText += `📅 *Dates:* ${rentalDates.startDate} ➔ ${rentalDates.endDate} (${durationDays} Days)\n\n`;
+    if (hasRentalItems) {
+      waText += `🏕️ *RENTAL ORDER - KAMERAD BASECAMP*\n`;
+      waText += `----------------------------------------\n`;
+      waText += `📋 *Order ID:* #${orderId}\n`;
+      waText += `👤 *Customer:* ${nameInput}\n`;
+      waText += `📱 *WhatsApp:* ${phoneInput}\n`;
+      waText += `📅 *Rental Dates:* ${rentalDates.startDate} ➔ ${rentalDates.endDate} (${durationDays} Days)\n\n`;
+    } else {
+      waText += `🛒 *PURCHASE & SERVICE ORDER - KAMERAD BASECAMP*\n`;
+      waText += `----------------------------------------\n`;
+      waText += `📋 *Order ID:* #${orderId}\n`;
+      waText += `👤 *Customer:* ${nameInput}\n`;
+      waText += `📱 *WhatsApp:* ${phoneInput}\n\n`;
+    }
 
-    waText += `🎒 *CART ITEMS:* \n`;
+    waText += `🎒 *ORDERED ITEMS:* \n`;
     cart.forEach(item => {
       const itemTotal = getItemTotalCost(item, durationDays);
-      let typeTag = item.itemType ? `[${item.itemType.toUpperCase()}] ` : '';
+      let typeTag = item.itemType ? `[${item.itemType.toUpperCase()}] ` : '[RENTAL] ';
       waText += `• ${typeTag}${item.name} x${item.qty} (${formatRupiah(itemTotal)})\n`;
     });
 
-    waText += `\n💳 *PAYMENT METHOD:* ${paymentSelection.method === 'dp' ? `Down Payment (${paymentSelection.dpPercent}%)` : 'Full COD at Basecamp'}\n`;
+    waText += `\n💳 *PAYMENT METHOD:* ${paymentSelection.method === 'dp' ? `Down Payment (${paymentSelection.dpPercent}%)` : 'Full COD / Cash at Basecamp'}\n`;
     waText += `💰 *Grand Total:* ${formatRupiah(grandTotal)}\n`;
     if (paymentSelection.method === 'dp') {
       waText += `💵 *Down Payment Required:* ${formatRupiah(dpAmount)}\n`;
       waText += `💸 *Remaining Balance at Pickup:* ${formatRupiah(balanceAmount)}\n`;
-    } else {
+    } else if (hasRentalItems) {
       waText += `📌 *COD Pickup Note:* Pickup scheduled for ${rentalDates.startDate} at Basecamp BC\n`;
     }
 
