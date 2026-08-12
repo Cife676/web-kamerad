@@ -174,6 +174,10 @@ let activeCarouselIndex = 1;
 // Selected Trip for Modal Confirmation
 let selectedTripForRegistration = null;
 
+// Selected Laundry Service & Timing Option State
+let selectedLaundryService = null;
+let selectedLaundryDropOffDate = formatDateInput(new Date());
+
 // Gear Database
 let GEAR_CATALOG = [
   {
@@ -824,7 +828,7 @@ function renderForSaleCatalog() {
   }).join('');
 }
 
-// Render Laundry Services Grid (With Cart Support!)
+// Render Laundry Services Grid (With Timing Options Modal!)
 function renderLaundryServices() {
   const grid = document.getElementById('laundryGrid');
   if (!grid) return;
@@ -842,20 +846,179 @@ function renderLaundryServices() {
         <div class="card-body">
           <h3 class="card-title">${displayName}</h3>
           <p style="font-size: 0.85rem; color: var(--text-muted);">${displayDesc}</p>
+          <div style="font-size: 0.8rem; color: #60a5fa; font-weight: 700; margin-top: 4px;">
+            ⏱️ Standard: 3 Hari (Drop-off ➔ Selesai Otomatis +3 Hari)
+          </div>
           <div class="card-pricing-row">
             <div class="price-box">
               <span class="rental-rate">${formatRupiah(srv.price)}</span>
             </div>
           </div>
           <div class="card-actions" style="margin-top: 0.5rem;">
-            <button class="btn-primary" onclick="addLaundryToCart('${srv.id}')" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); width: 100%;">
-              🛒 ${currentLang === 'id' ? 'Tambah ke Keranjang' : 'Add Service to Cart'}
+            <button class="btn-primary" onclick="openLaundryBookingModal('${srv.id}')" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); width: 100%;">
+              🧼 ${currentLang === 'id' ? 'Pesan & Pilih Waktu Laundry' : 'Book Laundry & Timing'}
             </button>
           </div>
         </div>
       </div>
     `;
   }).join('');
+}
+
+// Laundry Booking Modal Handlers
+function openLaundryBookingModal(serviceId) {
+  const service = LAUNDRY_SERVICES.find(s => s.id === serviceId);
+  if (!service) return;
+
+  selectedLaundryService = service;
+  selectedLaundryDropOffDate = formatDateInput(new Date());
+
+  const modalBackdrop = document.getElementById('laundryBookingModal');
+  renderLaundryModalContent();
+  modalBackdrop.classList.add('active');
+}
+
+function closeLaundryBookingModal() {
+  const modalBackdrop = document.getElementById('laundryBookingModal');
+  if (modalBackdrop) modalBackdrop.classList.remove('active');
+}
+
+function getCalculatedLaundryPickUpDate(dropOffStr) {
+  const dropDate = new Date(dropOffStr);
+  const pickDate = new Date(dropDate);
+  pickDate.setDate(pickDate.getDate() + 3);
+  return formatDateInput(pickDate);
+}
+
+function updateLaundryDropOffDate(newDateVal) {
+  selectedLaundryDropOffDate = newDateVal;
+  renderLaundryModalContent();
+}
+
+function renderLaundryModalContent() {
+  const modalBody = document.getElementById('laundryBookingModalBody');
+  if (!modalBody || !selectedLaundryService) return;
+
+  const displayName = currentLang === 'id' ? (selectedLaundryService.name_id || selectedLaundryService.name) : selectedLaundryService.name;
+  const displayDesc = currentLang === 'id' ? (selectedLaundryService.desc_id || selectedLaundryService.desc) : selectedLaundryService.desc;
+  const pickUpDateStr = getCalculatedLaundryPickUpDate(selectedLaundryDropOffDate);
+
+  modalBody.innerHTML = `
+    <div style="display: flex; flex-direction: column; gap: 1rem;">
+      <div style="display: flex; gap: 0.85rem; background: var(--bg-card); padding: 0.85rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); align-items: center;">
+        <img src="${selectedLaundryService.image}" alt="${displayName}" style="width: 76px; height: 76px; object-fit: cover; border-radius: var(--radius-sm);">
+        <div>
+          <span style="font-size: 0.72rem; color: #60a5fa; font-weight: 800;">🧼 LAYANAN LAUNDRY & CARE</span>
+          <h4 style="font-size: 1rem; color: #fff; margin: 2px 0;">${displayName}</h4>
+          <p style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">${displayDesc}</p>
+          <div style="font-size: 0.9rem; font-weight: 800; color: var(--green-success); margin-top: 2px;">${formatRupiah(selectedLaundryService.price)} / unit</div>
+        </div>
+      </div>
+
+      <!-- Laundry Timing Options -->
+      <div class="payment-choice-box" style="margin-bottom: 0;">
+        <span class="payment-choice-title">⏱️ Opsi Kecepatan / Waktu Laundry</span>
+        <div class="payment-options-grid" style="grid-template-columns: 1fr 1fr;">
+          <label class="payment-radio-card selected" style="border-color: #60a5fa;">
+            <input type="radio" name="laundryOption" value="standard" checked>
+            <span class="payment-opt-name" style="color: #60a5fa;">Standard (3 Hari)</span>
+            <span class="payment-opt-sub">Drop-off hari ini, selesai 3 hari kemudian</span>
+          </label>
+
+          <label class="payment-radio-card" style="opacity: 0.65; cursor: not-allowed; position: relative;">
+            <input type="radio" name="laundryOption" value="express" disabled>
+            <span class="payment-opt-name">Express (3 Jam)</span>
+            <span class="payment-opt-sub" style="color: var(--amber-warning); font-weight: 700;">🚀 Available Soon</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Date Pickers -->
+      <div style="background: var(--bg-card); padding: 0.85rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); display: flex; flex-direction: column; gap: 0.75rem;">
+        <div class="input-field-wrapper">
+          <label for="laundryDropOffInput">📅 Tanggal Antar Alat (Drop-off Date) *</label>
+          <input type="date" id="laundryDropOffInput" class="date-input" value="${selectedLaundryDropOffDate}" onchange="updateLaundryDropOffDate(this.value)" min="${formatDateInput(new Date())}">
+        </div>
+
+        <div style="background: rgba(96, 165, 250, 0.1); border: 1px solid rgba(96, 165, 250, 0.3); padding: 0.65rem 0.85rem; border-radius: var(--radius-sm); font-size: 0.85rem; color: #93c5fd; display: flex; align-items: center; justify-content: space-between;">
+          <span>✨ <strong>Tanggal Selesai Pick-up:</strong></span>
+          <strong style="color: #fff; font-size: 0.95rem;">${pickUpDateStr} (Otomatis +3 Hari)</strong>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 0.25rem;">
+        <button type="button" class="btn-secondary" onclick="addConfiguredLaundryToCart()" style="flex: 1;">
+          🛒 Tambah ke Keranjang
+        </button>
+        <button type="button" class="btn-primary" onclick="submitConfiguredLaundryWA()" style="flex: 1; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border: none;">
+          <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-1.154 4.22 4.22-1.107z"/></svg>
+          <span>Pesan via WhatsApp</span>
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+function addConfiguredLaundryToCart() {
+  if (!selectedLaundryService) return;
+
+  const pickUpDateStr = getCalculatedLaundryPickUpDate(selectedLaundryDropOffDate);
+  const displayName = currentLang === 'id' ? (selectedLaundryService.name_id || selectedLaundryService.name) : selectedLaundryService.name;
+
+  const existingInCart = cart.find(c => c.id === selectedLaundryService.id);
+  if (existingInCart) {
+    existingInCart.qty += 1;
+    existingInCart.dropOffDate = selectedLaundryDropOffDate;
+    existingInCart.pickUpDate = pickUpDateStr;
+  } else {
+    cart.push({
+      id: selectedLaundryService.id,
+      name: selectedLaundryService.name,
+      name_id: selectedLaundryService.name_id,
+      price: selectedLaundryService.price,
+      priceBase2Days: selectedLaundryService.price,
+      image: selectedLaundryService.image,
+      itemType: 'laundry',
+      timingOption: 'Standard (3 Hari)',
+      dropOffDate: selectedLaundryDropOffDate,
+      pickUpDate: pickUpDateStr,
+      qty: 1
+    });
+  }
+
+  closeLaundryBookingModal();
+  updateCartUI();
+  showToast(`Layanan "${displayName}" (Drop-off: ${selectedLaundryDropOffDate} ➔ Pick-up: ${pickUpDateStr}) ditambahkan ke keranjang!`, 'success');
+}
+
+function submitConfiguredLaundryWA() {
+  if (!selectedLaundryService) return;
+
+  const pickUpDateStr = getCalculatedLaundryPickUpDate(selectedLaundryDropOffDate);
+  const displayName = currentLang === 'id' ? (selectedLaundryService.name_id || selectedLaundryService.name) : selectedLaundryService.name;
+  const orderId = 'KMRD-LNDR-' + Math.floor(1000 + Math.random() * 9000);
+
+  const pName = currentCustomer ? currentCustomer.name : 'Penyewa Basecamp';
+  const pPhone = currentCustomer ? currentCustomer.phone : '';
+
+  let waText = '';
+  waText += `🧼 *PESANAN LAUNDRY & CARE - KAMERAD BASECAMP*\n`;
+  waText += `----------------------------------------\n`;
+  waText += `📋 *Order ID:* #${orderId}\n`;
+  waText += `🧺 *Layanan:* ${displayName}\n`;
+  waText += `⏱️ *Opsi Kecepatan:* Standard (3 Hari)\n`;
+  waText += `📅 *Tanggal Antar (Drop-off):* ${selectedLaundryDropOffDate}\n`;
+  waText += `✨ *Tanggal Selesai (Pick-up):* ${pickUpDateStr} (Otomatis +3 Hari)\n`;
+  waText += `💰 *Biaya Service:* ${formatRupiah(selectedLaundryService.price)}\n\n`;
+  waText += `👤 *Nama Pemesan:* ${pName}\n`;
+  if (pPhone) waText += `📱 *WhatsApp:* ${pPhone}\n`;
+  waText += `----------------------------------------\n`;
+  waText += `Halo tim KAMERAD, saya ingin pesan layanan cuci & perawatan alat gunung ini!`;
+
+  closeLaundryBookingModal();
+  showToast('Membuka WhatsApp Basecamp...', 'success');
+  openWhatsAppURL(waText);
 }
 
 // Add Rental Gear to Cart
@@ -912,33 +1075,6 @@ function addSaleItemToCart(itemId) {
 
   updateCartUI();
   const msg = currentLang === 'id' ? `"${displayName}" ditambahkan ke keranjang!` : `Added "${displayName}" to cart!`;
-  showToast(msg, 'success');
-}
-
-// Add Laundry Service to Cart
-function addLaundryToCart(serviceId) {
-  const service = LAUNDRY_SERVICES.find(s => s.id === serviceId);
-  if (!service) return;
-
-  const displayName = currentLang === 'id' ? (service.name_id || service.name) : service.name;
-  const existingInCart = cart.find(c => c.id === serviceId);
-  if (existingInCart) {
-    existingInCart.qty += 1;
-  } else {
-    cart.push({
-      id: service.id,
-      name: service.name,
-      name_id: service.name_id,
-      price: service.price,
-      priceBase2Days: service.price,
-      image: service.image,
-      itemType: 'laundry',
-      qty: 1
-    });
-  }
-
-  updateCartUI();
-  const msg = currentLang === 'id' ? `Layanan "${displayName}" ditambahkan ke keranjang!` : `Added Laundry service "${displayName}" to cart!`;
   showToast(msg, 'success');
 }
 
@@ -1485,7 +1621,7 @@ function updateCartUI() {
       rateDetailText = `${formatRupiah(item.price)} / item`;
     } else if (item.itemType === 'laundry') {
       typeBadgeHTML = `<span class="spec-chip" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; font-size: 0.65rem; font-weight: 800;">LAUNDRY</span>`;
-      rateDetailText = `${formatRupiah(item.price)} / unit`;
+      rateDetailText = `${formatRupiah(item.price)} (Drop: ${item.dropOffDate} ➔ Pick: ${item.pickUpDate})`;
     } else if (durationDays > 2) {
       rateDetailText += ` (+${durationDays - 2}x ${formatRupiah(item.priceExtraDay)})`;
     }
@@ -1498,7 +1634,7 @@ function updateCartUI() {
             ${typeBadgeHTML}
             <span class="cart-item-name">${displayName}</span>
           </div>
-          <span class="cart-item-rate">${rateDetailText}</span>
+          <span class="cart-item-rate" style="font-size: 0.76rem;">${rateDetailText}</span>
           <span style="font-weight: 700; color: #fff;">${formatRupiah(itemTotal)}</span>
         </div>
         <div class="qty-controls">
@@ -1643,7 +1779,7 @@ function closeCheckoutModal() {
   document.getElementById('checkoutModal').classList.remove('active');
 }
 
-// Submit Order: Category-Aware Receipt Formatting (Includes Order ID across all!)
+// Submit Order: Category-Aware Receipt Formatting
 async function submitOrderAndOpenWhatsApp(event) {
   event.preventDefault();
 
@@ -1733,7 +1869,11 @@ async function submitOrderAndOpenWhatsApp(event) {
       const displayName = item.name_id || item.name;
       const itemTotal = getItemTotalCost(item, durationDays);
       let typeTag = item.itemType ? `[${item.itemType.toUpperCase()}] ` : '[RENTAL] ';
-      waText += `• ${typeTag}${displayName} x${item.qty} (${formatRupiah(itemTotal)})\n`;
+      let extraDetail = '';
+      if (item.itemType === 'laundry' && item.dropOffDate) {
+        extraDetail = ` (Drop: ${item.dropOffDate} ➔ Pick: ${item.pickUpDate})`;
+      }
+      waText += `• ${typeTag}${displayName}${extraDetail} x${item.qty} (${formatRupiah(itemTotal)})\n`;
     });
 
     waText += `\n💳 *METODE PEMBAYARAN:* ${paymentSelection.method === 'dp' ? `Down Payment (${paymentSelection.dpPercent}%)` : 'Full COD / Tunai di Basecamp'}\n`;
@@ -1771,7 +1911,11 @@ async function submitOrderAndOpenWhatsApp(event) {
     cart.forEach(item => {
       const itemTotal = getItemTotalCost(item, durationDays);
       let typeTag = item.itemType ? `[${item.itemType.toUpperCase()}] ` : '[RENTAL] ';
-      waText += `• ${typeTag}${item.name} x${item.qty} (${formatRupiah(itemTotal)})\n`;
+      let extraDetail = '';
+      if (item.itemType === 'laundry' && item.dropOffDate) {
+        extraDetail = ` (Drop: ${item.dropOffDate} ➔ Pick: ${item.pickUpDate})`;
+      }
+      waText += `• ${typeTag}${item.name}${extraDetail} x${item.qty} (${formatRupiah(itemTotal)})\n`;
     });
 
     waText += `\n💳 *PAYMENT METHOD:* ${paymentSelection.method === 'dp' ? `Down Payment (${paymentSelection.dpPercent}%)` : 'Full COD / Cash at Basecamp'}\n`;
