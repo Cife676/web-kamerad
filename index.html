@@ -98,6 +98,11 @@
           <span data-i18n="nav_rental_equipment">Rental Equipment</span>
         </div>
 
+        <div class="nav-drawer-link" onclick="closeMobileNav(); showSection('tripSection');">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 002 2h1.5a2.5 2.5 0 002.5-2.5V7a2 2 0 00-2-2h-2c-.552 0-1-.448-1-1V2.055M12 22A10 10 0 1012 2a10 10 0 000 20z"></path></svg>
+          <span data-i18n="nav_open_trip">Open Trip</span>
+        </div>
+
         <div class="nav-drawer-link" onclick="closeMobileNav(); showSection('forSaleSection');">
           <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
           <span data-i18n="nav_for_sale">For Sale</span>
@@ -152,7 +157,7 @@
           <span data-i18n="hero_chip_2">Next-Day BC Pickup for COD</span>
         </div>
         <div class="hero-feat-chip">
-          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"></path></svg>
+          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 002 2h2v4l.586-.586z"></path></svg>
           <span data-i18n="hero_chip_3">Direct WhatsApp Confirmation</span>
         </div>
       </div>
@@ -165,7 +170,7 @@
       </button>
 
       <div class="coverflow-cards-stage" id="carouselStage">
-        <!-- Card 1: Kamerad Basecamp (Rental) -->
+        <!-- Card 1: Kamerad Basecamp (Rental Equipment) -->
         <div class="carousel-card card-left" id="carouselCard0" onclick="handleCardClick(0, 'catalogSection')">
           <div class="carousel-card-img-wrap">
             <img src="assets/tent_4season.jpg" alt="Kamerad Basecamp" class="carousel-card-img">
@@ -176,8 +181,8 @@
           </div>
         </div>
 
-        <!-- Card 2: Walk With Kamerad (Nature Trip) -->
-        <div class="carousel-card card-center" id="carouselCard1" onclick="handleCardClick(1, 'trip')">
+        <!-- Card 2: Walk With Kamerad (Open Trip) -->
+        <div class="carousel-card card-center" id="carouselCard1" onclick="handleCardClick(1, 'tripSection')">
           <div class="carousel-card-img-wrap">
             <img src="assets/nature_trip_banner.jpg" alt="Walk With Kamerad" class="carousel-card-img">
             <div class="carousel-card-overlay">
@@ -187,12 +192,12 @@
           </div>
         </div>
 
-        <!-- Card 3: After Adventure Services (Laundry & Care) -->
+        <!-- Card 3: Laundry Service -->
         <div class="carousel-card card-right" id="carouselCard2" onclick="handleCardClick(2, 'laundrySection')">
           <div class="carousel-card-img-wrap">
-            <img src="assets/gear_care_banner.jpg" alt="After Adventure Services" class="carousel-card-img">
+            <img src="assets/gear_care_banner.jpg" alt="Laundry Service" class="carousel-card-img">
             <div class="carousel-card-overlay">
-              <h3 class="carousel-card-title">After Adventure Services</h3>
+              <h3 class="carousel-card-title">Laundry Service</h3>
               <p class="carousel-card-desc" data-i18n="card_3_desc">Professional gear washing, down care, waterproofing, and repair</p>
             </div>
           </div>
@@ -292,7 +297,24 @@
     </div>
   </section>
 
-  <!-- 2. For Sale Section (On-Demand) -->
+  <!-- 2. OPEN TRIP SECTION (On-Demand) -->
+  <section class="service-section content-section" id="tripSection">
+    <div class="section-header">
+      <h2 class="section-title">
+        <span data-i18n="nav_open_trip">Open Trip</span>
+        <span style="font-size: 0.85rem; color: #a855f7; background: rgba(168, 85, 247, 0.15); padding: 4px 12px; border-radius: 99px; font-weight: 700;">
+          ⛰️ EKSPEDISI PENDAKIAN BERSAMA
+        </span>
+      </h2>
+      <p class="section-subtitle">Ikuti petualangan mendaki gunung terbaik bersama guide & ranger berpengalaman KAMERAD basecamp edition.</p>
+    </div>
+
+    <div class="for-sale-grid" id="openTripGrid">
+      <!-- Dynamically populated via app.js -->
+    </div>
+  </section>
+
+  <!-- 3. For Sale Section (On-Demand) -->
   <section class="service-section content-section" id="forSaleSection" style="background: var(--bg-surface);">
     <div class="section-header">
       <h2 class="section-title">
@@ -309,7 +331,7 @@
     </div>
   </section>
 
-  <!-- 3. Laundry Service Section (On-Demand) -->
+  <!-- 4. Laundry Service Section (On-Demand) -->
   <section class="service-section content-section" id="laundrySection">
     <div class="section-header">
       <h2 class="section-title">

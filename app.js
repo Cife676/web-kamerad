@@ -20,6 +20,7 @@ const TRANSLATIONS = {
     nav_cart: 'Keranjang',
     nav_home: 'Home',
     nav_rental_equipment: 'Rental Equipment',
+    nav_open_trip: 'Open Trip',
     nav_for_sale: 'For Sale',
     nav_laundry_service: 'Laundry Service',
     nav_account: 'Akun Saya / Login',
@@ -89,6 +90,7 @@ const TRANSLATIONS = {
     nav_cart: 'Cart',
     nav_home: 'Home',
     nav_rental_equipment: 'Rental Equipment',
+    nav_open_trip: 'Open Trip',
     nav_for_sale: 'For Sale',
     nav_laundry_service: 'Laundry Service',
     nav_account: 'My Account / Login',
@@ -283,6 +285,43 @@ let GEAR_CATALOG = [
   }
 ];
 
+// Open Trips Database (Walk With Kamerad Expeditions)
+const OPEN_TRIPS = [
+  {
+    id: 'trip-1',
+    title: 'Open Trip Mt. Rinjani 3726 MDPL (Lombok)',
+    price: 2450000,
+    dateRange: '25 – 28 Agustus 2026',
+    duration: '4D3N',
+    difficulty: 'Moderate – Hard',
+    image: 'assets/nature_trip_banner.jpg',
+    specs: ['Guide & Porter Team', 'Full Camping Gear', 'Logistik Pendakian', 'Simaksi Resmi'],
+    desc: 'Ekspedisi puncakan Gunung Rinjani & Danau Segara Anak. Fasilitas tenda 4-season & makanan bergizi.'
+  },
+  {
+    id: 'trip-2',
+    title: 'Open Trip Mt. Gede via Cibodas',
+    price: 650000,
+    dateRange: '5 – 6 September 2026',
+    duration: '2D1N',
+    difficulty: 'Beginner – Moderate',
+    image: 'assets/hero_banner.jpg',
+    specs: ['Guide Kamerad', 'Tenda & Alat Masak', 'Simaksi Online', 'P3K & Radio HT'],
+    desc: 'Pendakian santai Kawah Ratu & Alun-Alun Surya Kencana. Cocok untuk pendaki baru & pemula.'
+  },
+  {
+    id: 'trip-3',
+    title: 'Open Trip Sunrise Camp Mt. Prau Dieng',
+    price: 480000,
+    dateRange: '19 – 20 September 2026',
+    duration: '2D1N',
+    difficulty: 'Easy – Beginner',
+    image: 'assets/tent_4season.jpg',
+    specs: ['Golden Sunrise View', 'Tenda & Matras', 'Makan 3x', 'Dokumentasi Foto'],
+    desc: 'Nikmati pemandangan Golden Sunrise Prau 2565 MDPL dengan tenda hangat dan fasilitas komplit.'
+  }
+];
+
 // For Sale Items (Peralatan Dijual)
 const FOR_SALE_ITEMS = [
   {
@@ -375,6 +414,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderNavAuthButtons();
   renderCarousel();
   renderCatalog();
+  renderOpenTripsCatalog();
   renderForSaleCatalog();
   renderLaundryServices();
   updateCartUI();
@@ -440,10 +480,7 @@ function handleCardClick(cardIndex, actionTarget) {
   }
 
   // If already central big card: switch to section on-demand!
-  if (actionTarget === 'trip') {
-    const tripWAText = encodeURIComponent(`Halo KAMERAD basecamp edition, saya tertarik mendaftar trip alam *Walk With Kamerad*. Boleh minta info pendaftaran & jadwal terdekat?`);
-    window.open(`https://api.whatsapp.com/send?phone=${BASECAMP_WHATSAPP_NUMBER}&text=${tripWAText}`, '_blank');
-  } else if (actionTarget) {
+  if (actionTarget) {
     showSection(actionTarget);
   }
 }
@@ -606,6 +643,43 @@ function renderNavAuthButtons() {
       </button>
     `;
   }
+}
+
+// Render Open Trips Grid
+function renderOpenTripsCatalog() {
+  const grid = document.getElementById('openTripGrid');
+  if (!grid) return;
+
+  grid.innerHTML = OPEN_TRIPS.map(trip => {
+    const tripWAText = encodeURIComponent(`Halo KAMERAD basecamp edition, saya tertarik mendaftar Open Trip: *${trip.title}* (${trip.dateRange} - ${formatRupiah(trip.price)}/pax)`);
+    const waLink = `https://api.whatsapp.com/send?phone=${BASECAMP_WHATSAPP_NUMBER}&text=${tripWAText}`;
+
+    return `
+      <div class="service-card">
+        <div class="card-img-container">
+          <div class="promo-card-badge" style="background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);">${trip.duration}</div>
+          <img src="${trip.image}" alt="${trip.title}" class="card-img" loading="lazy">
+        </div>
+        <div class="card-body">
+          <h3 class="card-title">${trip.title}</h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">${trip.desc}</p>
+          <div style="font-size: 0.8rem; color: #a855f7; font-weight: 700;">🗓️ ${trip.dateRange} | 🏔️ Level: ${trip.difficulty}</div>
+          <div class="card-specs-row">
+            ${trip.specs.map(s => `<span class="spec-chip">${s}</span>`).join('')}
+          </div>
+          <div class="card-pricing-row">
+            <div class="price-box">
+              <span class="rental-rate">${formatRupiah(trip.price)}</span>
+              <span class="rental-unit">/ pax (peserta)</span>
+            </div>
+          </div>
+          <a href="${waLink}" target="_blank" class="btn-primary" style="text-decoration: none; margin-top: 0.5rem; background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);">
+            ⛰️ ${currentLang === 'id' ? 'Daftar Trip via WA' : 'Join Trip via WA'}
+          </a>
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
 // Render For Sale Catalog Grid
@@ -1605,6 +1679,7 @@ function setLanguage(lang) {
   renderNavAuthButtons();
   renderCarousel();
   renderCatalog();
+  renderOpenTripsCatalog();
   renderForSaleCatalog();
   renderLaundryServices();
   updateCartUI();
