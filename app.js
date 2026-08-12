@@ -480,11 +480,8 @@ function nextCarouselCard() {
 }
 
 function handleCardClick(cardIndex, actionTarget) {
-  if (activeCarouselIndex !== cardIndex) {
-    activeCarouselIndex = cardIndex;
-    renderCarousel();
-    return;
-  }
+  activeCarouselIndex = cardIndex;
+  renderCarousel();
 
   if (actionTarget) {
     showSection(actionTarget);
