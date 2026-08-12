@@ -21,7 +21,7 @@ const TRANSLATIONS = {
     nav_home: 'Home',
     nav_rental_equipment: 'Rental Equipment',
     nav_open_trip: 'Open Trip',
-    nav_for_sale: 'For Sale',
+    nav_for_sale: 'K-Shop',
     nav_laundry_service: 'Laundry Service',
     nav_account: 'Akun Saya / Login',
     home_title: 'KAMERAD basecamp edition',
@@ -91,7 +91,7 @@ const TRANSLATIONS = {
     nav_home: 'Home',
     nav_rental_equipment: 'Rental Equipment',
     nav_open_trip: 'Open Trip',
-    nav_for_sale: 'For Sale',
+    nav_for_sale: 'K-Shop',
     nav_laundry_service: 'Laundry Service',
     nav_account: 'My Account / Login',
     home_title: 'KAMERAD basecamp edition',
@@ -332,7 +332,7 @@ const OPEN_TRIPS = [
   }
 ];
 
-// For Sale Items (Peralatan Dijual)
+// K-Shop Items (Peralatan K-Shop Dijual)
 const FOR_SALE_ITEMS = [
   {
     id: 'sale-1',
@@ -568,7 +568,7 @@ function getRentalDurationDays() {
   return diffDays > 0 ? diffDays : 2;
 }
 
-// Calculate Item Cost (Rental vs Fixed Price items like For Sale, Laundry)
+// Calculate Item Cost (Rental vs Fixed Price items like K-Shop, Laundry)
 function getItemTotalCost(item, durationDays) {
   if (item.itemType === 'sale' || item.itemType === 'laundry' || item.price !== undefined) {
     return (item.price || item.priceBase2Days || 0) * item.qty;
@@ -798,7 +798,7 @@ function submitTripRegistrationWA(event) {
   openWhatsAppURL(waText);
 }
 
-// Render For Sale Catalog Grid (With Cart Support!)
+// Render K-Shop Catalog Grid (With Shop Cart Support!)
 function renderForSaleCatalog() {
   const grid = document.getElementById('forSaleGrid');
   if (!grid) return;
@@ -810,7 +810,7 @@ function renderForSaleCatalog() {
     return `
       <div class="service-card">
         <div class="card-img-container">
-          <div class="promo-card-badge" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">NEW ITEM</div>
+          <div class="promo-card-badge" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">K-SHOP ITEM</div>
           <img src="${item.image}" alt="${displayName}" class="card-img" loading="lazy">
         </div>
         <div class="card-body">
@@ -825,7 +825,7 @@ function renderForSaleCatalog() {
           </div>
           <div class="card-actions" style="margin-top: 0.5rem;">
             <button class="btn-primary" onclick="addSaleItemToCart('${item.id}')" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); width: 100%;">
-              🛒 ${currentLang === 'id' ? 'Tambah ke Keranjang' : 'Add to Cart'}
+              🛒 ${currentLang === 'id' ? 'Tambah ke Shop Cart' : 'Add to Shop Cart'}
             </button>
           </div>
         </div>
@@ -955,7 +955,7 @@ function renderLaundryModalContent() {
       <!-- Actions -->
       <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 0.25rem;">
         <button type="button" class="btn-secondary" onclick="addConfiguredLaundryToCart()" style="flex: 1;">
-          🛒 Tambah ke Keranjang
+          🛒 Tambah ke Lau. Cart
         </button>
         <button type="button" class="btn-primary" onclick="submitConfiguredLaundryWA()" style="flex: 1; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border: none;">
           <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-1.154 4.22 4.22-1.107z"/></svg>
@@ -996,7 +996,7 @@ function addConfiguredLaundryToCart() {
   activeCartTab = 'laundry';
   closeLaundryBookingModal();
   updateCartUI();
-  showToast(`Layanan "${displayName}" ditambahkan ke Laundry Cart!`, 'success');
+  showToast(`Layanan "${displayName}" ditambahkan ke Lau. Cart!`, 'success');
 }
 
 function submitConfiguredLaundryWA() {
@@ -1059,7 +1059,7 @@ function addToCart(itemId) {
   showToast(successMsg, 'success');
 }
 
-// Add For Sale Item to Cart
+// Add For Sale Item to Shop Cart
 function addSaleItemToCart(itemId) {
   const item = FOR_SALE_ITEMS.find(i => i.id === itemId);
   if (!item) return;
@@ -1083,7 +1083,7 @@ function addSaleItemToCart(itemId) {
 
   activeCartTab = 'sale';
   updateCartUI();
-  const msg = currentLang === 'id' ? `"${displayName}" ditambahkan ke Sale Cart!` : `Added "${displayName}" to Sale Cart!`;
+  const msg = currentLang === 'id' ? `"${displayName}" ditambahkan ke Shop Cart!` : `Added "${displayName}" to Shop Cart!`;
   showToast(msg, 'success');
 }
 
@@ -1671,15 +1671,15 @@ function updateCartUI() {
 
     if (subtotalRow) subtotalRow.innerText = 'Tarif Cuci & Care';
     if (grandTotalRow) grandTotalRow.innerText = formatRupiah(activeTabTotal);
-    if (checkoutBtnSpan) checkoutBtnSpan.innerText = 'Lanjut Checkout Laundry Cart →';
+    if (checkoutBtnSpan) checkoutBtnSpan.innerText = 'Lanjut Checkout Lau. Cart →';
 
   } else if (activeCartTab === 'sale') {
     if (datesCard) {
       datesCard.style.display = 'block';
       datesCard.innerHTML = `
         <div class="cart-dates-header">
-          <span style="color: var(--green-success); font-weight: 800;">🏷️ PEMBELIAN PERALATAN BARU</span>
-          <span style="background: rgba(16, 185, 129, 0.2); color: var(--green-success); padding: 2px 8px; border-radius: 4px; font-weight: 800;">For Sale</span>
+          <span style="color: var(--green-success); font-weight: 800;">🏷️ PEMBELIAN K-SHOP</span>
+          <span style="background: rgba(16, 185, 129, 0.2); color: var(--green-success); padding: 2px 8px; border-radius: 4px; font-weight: 800;">K-Shop</span>
         </div>
         <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Produk outdoor original & aksesoris gunung siap pakai.</p>
       `;
@@ -1691,14 +1691,14 @@ function updateCartUI() {
 
     if (subtotalRow) subtotalRow.innerText = 'Total Produk';
     if (grandTotalRow) grandTotalRow.innerText = formatRupiah(activeTabTotal);
-    if (checkoutBtnSpan) checkoutBtnSpan.innerText = 'Lanjut Checkout Sale Cart →';
+    if (checkoutBtnSpan) checkoutBtnSpan.innerText = 'Lanjut Checkout Shop Cart →';
   }
 
   // 3. Render Items List for Active Tab
   if (!cartItemsList) return;
 
   if (activeTabItems.length === 0) {
-    const tabName = activeCartTab === 'rental' ? 'Rent Cart' : activeCartTab === 'laundry' ? 'Laundry Cart' : 'Sale Cart';
+    const tabName = activeCartTab === 'rental' ? 'Rent Cart' : activeCartTab === 'laundry' ? 'Lau. Cart' : 'Shop Cart';
     cartItemsList.innerHTML = `
       <div style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
         <svg width="40" height="40" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin: 0 auto 0.75rem auto; opacity: 0.4;">
@@ -1718,7 +1718,7 @@ function updateCartUI() {
     let rateDetailText = `${formatRupiah(item.priceBase2Days)} / 2 Days`;
 
     if (item.itemType === 'sale') {
-      typeBadgeHTML = `<span class="spec-chip" style="background: rgba(16, 185, 129, 0.15); color: var(--green-success); font-size: 0.65rem; font-weight: 800;">FOR SALE</span>`;
+      typeBadgeHTML = `<span class="spec-chip" style="background: rgba(16, 185, 129, 0.15); color: var(--green-success); font-size: 0.65rem; font-weight: 800;">K-SHOP</span>`;
       rateDetailText = `${formatRupiah(item.price)} / item`;
     } else if (item.itemType === 'laundry') {
       typeBadgeHTML = `<span class="spec-chip" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; font-size: 0.65rem; font-weight: 800;">LAUNDRY</span>`;
@@ -1860,7 +1860,7 @@ function closeQuickView() {
 function openCheckoutModal() {
   const activeTabItems = cart.filter(i => (i.itemType || 'rental') === activeCartTab);
   if (activeTabItems.length === 0) {
-    const tabName = activeCartTab === 'rental' ? 'Rent Cart' : activeCartTab === 'laundry' ? 'Laundry Cart' : 'Sale Cart';
+    const tabName = activeCartTab === 'rental' ? 'Rent Cart' : activeCartTab === 'laundry' ? 'Lau. Cart' : 'Shop Cart';
     showToast(`${tabName} Anda kosong!`, 'warning');
     return;
   }
@@ -1910,7 +1910,7 @@ async function submitOrderAndOpenWhatsApp(event) {
 
   let orderPrefix = 'KMRD-';
   if (activeCartTab === 'laundry') orderPrefix = 'KMRD-LNDR-';
-  if (activeCartTab === 'sale') orderPrefix = 'KMRD-SALE-';
+  if (activeCartTab === 'sale') orderPrefix = 'KMRD-SHOP-';
 
   const orderId = orderPrefix + Math.floor(1000 + Math.random() * 9000);
 
@@ -1997,12 +1997,12 @@ async function submitOrderAndOpenWhatsApp(event) {
     });
     waText += `\n💰 *Total Biaya Laundry:* ${formatRupiah(grandTotal)}\n`;
   } else if (activeCartTab === 'sale') {
-    waText += `🛒 *PEMBELIAN ALAT BARU - KAMERAD BASECAMP*\n`;
+    waText += `🛒 *PEMBELIAN K-SHOP - KAMERAD BASECAMP*\n`;
     waText += `----------------------------------------\n`;
     waText += `📋 *Order ID:* #${orderId}\n`;
     waText += `👤 *Nama Pembeli:* ${nameInput}\n`;
     waText += `📱 *WhatsApp:* ${phoneInput}\n\n`;
-    waText += `🏷️ *DAFTAR PRODUK DIBELI:* \n`;
+    waText += `🏷️ *DAFTAR PRODUK K-SHOP:* \n`;
     activeTabItems.forEach(item => {
       const displayName = item.name_id || item.name;
       const itemTotal = getItemTotalCost(item, durationDays);
