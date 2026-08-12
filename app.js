@@ -462,7 +462,24 @@ document.addEventListener('DOMContentLoaded', () => {
   renderLaundryServices();
   updateCartUI();
   setupEventListeners();
+  checkSecretAdminURL();
 });
+
+// Secret Admin URL Trigger Detector (/kameradcrewonly/)
+function checkSecretAdminURL() {
+  const currentPath = window.location.pathname.toLowerCase();
+  const currentHash = window.location.hash.toLowerCase();
+  const currentSearch = window.location.search.toLowerCase();
+
+  if (currentPath.includes('kameradcrewonly') || 
+      currentHash.includes('kameradcrewonly') || 
+      currentSearch.includes('kameradcrewonly')) {
+    openAdminDashboardModal();
+  }
+}
+
+window.addEventListener('hashchange', checkSecretAdminURL);
+window.addEventListener('popstate', checkSecretAdminURL);
 
 // Mobile Hamburger Drawer Handlers
 function openMobileNav() {
