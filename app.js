@@ -1647,7 +1647,7 @@ function updateCartUI() {
       }
     }
 
-    if (checkoutBtnSpan) checkoutBtnSpan.innerText = 'Lanjut Checkout Rent Cart →';
+    if (checkoutBtnSpan) checkoutBtnSpan.innerText = 'Lanjut Checkout Rental →';
 
   } else if (activeCartTab === 'laundry') {
     if (datesCard) {
@@ -1671,7 +1671,7 @@ function updateCartUI() {
 
     if (subtotalRow) subtotalRow.innerText = 'Tarif Cuci & Care';
     if (grandTotalRow) grandTotalRow.innerText = formatRupiah(activeTabTotal);
-    if (checkoutBtnSpan) checkoutBtnSpan.innerText = 'Lanjut Checkout Lau. Cart →';
+    if (checkoutBtnSpan) checkoutBtnSpan.innerText = 'Lanjut Checkout Laundry →';
 
   } else if (activeCartTab === 'sale') {
     if (datesCard) {
@@ -1691,14 +1691,14 @@ function updateCartUI() {
 
     if (subtotalRow) subtotalRow.innerText = 'Total Produk';
     if (grandTotalRow) grandTotalRow.innerText = formatRupiah(activeTabTotal);
-    if (checkoutBtnSpan) checkoutBtnSpan.innerText = 'Lanjut Checkout Shop Cart →';
+    if (checkoutBtnSpan) checkoutBtnSpan.innerText = 'Lanjut Checkout K-Shop →';
   }
 
   // 3. Render Items List for Active Tab
   if (!cartItemsList) return;
 
   if (activeTabItems.length === 0) {
-    const tabName = activeCartTab === 'rental' ? 'Rent Cart' : activeCartTab === 'laundry' ? 'Lau. Cart' : 'Shop Cart';
+    const tabName = activeCartTab === 'rental' ? 'Rental Cart' : activeCartTab === 'laundry' ? 'Laundry Cart' : 'K-Shop Cart';
     cartItemsList.innerHTML = `
       <div style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
         <svg width="40" height="40" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin: 0 auto 0.75rem auto; opacity: 0.4;">
