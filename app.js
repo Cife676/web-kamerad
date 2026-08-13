@@ -1980,12 +1980,8 @@ async function submitOrderAndOpenWhatsApp(event) {
   const dpAmount = Math.round(grandTotal * (paymentSelection.dpPercent / 100));
   const balanceAmount = paymentSelection.method === 'dp' ? (grandTotal - dpAmount) : grandTotal;
 
-  // Order ID Format: #CD-(YYMMDD)-(001)-7 or category prefix
-  let orderPrefix = 'CD';
-  if (activeCartTab === 'laundry') orderPrefix = 'LNDR';
-  if (activeCartTab === 'sale') orderPrefix = 'SHOP';
-
-  const orderId = generateKameradOrderID(orderPrefix);
+  // Uniform Order ID Format for all categories: #CD-(YYMMDD)-(001)-7
+  const orderId = generateKameradOrderID('CD');
 
   // 1. Silent Booking Log in Supabase with PENDING Status
   if (supabaseClient) {
