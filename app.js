@@ -14,6 +14,38 @@ const BASECAMP_WHATSAPP_NUMBER = '6281803590667';
 const ADMIN_USERNAME_CRED = 'Kamerad';
 const ADMIN_PASSWORD_CRED = 'KameradAdmin123';
 
+// Order ID Generator: #CD-(YYMMDD)-(daily counter 001, 002...)-7
+function generateKameradOrderID(prefix = 'CD') {
+  const now = new Date();
+  const yy = String(now.getFullYear()).slice(-2);
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  const dateStr = `${yy}${mm}${dd}`;
+
+  let counterObj = JSON.parse(localStorage.getItem('kmrd_daily_counter') || '{"date":"","count":0}');
+  if (counterObj.date !== dateStr) {
+    counterObj = { date: dateStr, count: 1 };
+  } else {
+    counterObj.count += 1;
+  }
+  localStorage.setItem('kmrd_daily_counter', JSON.stringify(counterObj));
+
+  const countStr = String(counterObj.count).padStart(3, '0');
+  return `${prefix}-${dateStr}${countStr}7`;
+}
+
+// Receipt Date Formatter: DD Mon YYYY (e.g. 13 Aug 2026)
+function formatReceiptDate(dateInput) {
+  if (!dateInput) return '';
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return dateInput;
+  const day = String(d.getDate()).padStart(2, '0');
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const month = months[d.getMonth()];
+  const year = d.getFullYear();
+  return `${day} ${month} ${year}`;
+}
+
 // i18n Translation Dictionary (ID is Default)
 const TRANSLATIONS = {
   id: {
@@ -80,7 +112,7 @@ const TRANSLATIONS = {
     checkout_title: 'Lengkapi Pesanan Basecamp',
     label_fullname: 'Nama Lengkap Penyewa *',
     label_phone: 'Nomor WhatsApp *',
-    label_notes: 'Catatan Tambahan / Gunung Tujuan (Opsional)',
+    label_notes: 'Catatan Tambahan (Opsional)',
     btn_back_to_cart: 'Kembali ke Keranjang',
     btn_submit_wa: 'Kirim & Pesan via WhatsApp',
     base_rate_text: 'Paket Minimal (2 Hari)',
@@ -150,7 +182,7 @@ const TRANSLATIONS = {
     checkout_title: 'Complete Your Basecamp Order',
     label_fullname: 'Your Full Name *',
     label_phone: 'WhatsApp Phone Number *',
-    label_notes: 'Special Notes / Trailhead Destination (Optional)',
+    label_notes: 'Special Notes (Optional)',
     btn_back_to_cart: 'Back to Cart',
     btn_submit_wa: 'Submit & Order via WhatsApp',
     base_rate_text: 'Base Rate (2 Days)',
@@ -787,7 +819,7 @@ function submitTripRegistrationWA(event) {
     return;
   }
 
-  const orderId = 'KMRD-TRIP-' + Math.floor(1000 + Math.random() * 9000);
+  const orderId = generateKameradOrderID('CD');
 
   let waText = '';
   if (currentLang === 'id') {
@@ -800,7 +832,7 @@ function submitTripRegistrationWA(event) {
     waText += `👤 *Nama Peserta:* ${pName}\n`;
     waText += `📱 *WhatsApp:* ${pPhone}\n`;
     waText += `----------------------------------------\n`;
-    waText += `Halo tim KAMERAD, saya mengonfirmasi pendaftaran untuk Open Trip ini!`;
+    waText += `Kamerad web-app order`;
   } else {
     waText += `⛰️ *OPEN TRIP REGISTRATION - KAMERAD BASECAMP*\n`;
     waText += `----------------------------------------\n`;
@@ -811,7 +843,7 @@ function submitTripRegistrationWA(event) {
     waText += `👤 *Participant Name:* ${pName}\n`;
     waText += `📱 *WhatsApp:* ${pPhone}\n`;
     waText += `----------------------------------------\n`;
-    waText += `Hello KAMERAD team, I confirm my registration for this Open Trip!`;
+    waText += `Kamerad web-app order`;
   }
 
   closeOpenTripConfirmModal();
@@ -1015,36 +1047,6 @@ function addConfiguredLaundryToCart() {
   updateCartUI();
   document.getElementById('cartBackdrop').classList.add('active');
   showToast(`Layanan "${displayName}" ditambahkan ke Laundry Cart!`, 'success');
-}
-
-function submitConfiguredLaundryWA() {
-  if (!selectedLaundryService) return;
-
-  const pickUpDateStr = getCalculatedLaundryPickUpDate(selectedLaundryDropOffDate);
-  const displayName = currentLang === 'id' ? (selectedLaundryService.name_id || selectedLaundryService.name) : selectedLaundryService.name;
-  const orderId = 'KMRD-LNDR-' + Math.floor(1000 + Math.random() * 9000);
-
-  const pName = currentCustomer ? currentCustomer.name : 'Pemesan Laundry Basecamp';
-  const pPhone = currentCustomer ? currentCustomer.phone : '';
-
-  let waText = '';
-  waText += `🧼 *PESANAN LAUNDRY & CARE - KAMERAD BASECAMP*\n`;
-  waText += `----------------------------------------\n`;
-  waText += `📋 *Order ID:* #${orderId}\n`;
-  waText += `🧺 *Layanan:* ${displayName}\n`;
-  waText += `⏱️ *Opsi Kecepatan:* Standard (3 Hari)\n`;
-  waText += `📅 *Tanggal Antar (Drop-off):* ${selectedLaundryDropOffDate}\n`;
-  waText += `✨ *Tanggal Selesai (Pick-up):* ${pickUpDateStr} (Otomatis +3 Hari)\n`;
-  waText += `💳 *Metode Pembayaran:* ${paymentSelection.laundryMethod === 'dropoff' ? 'Bayar saat Drop-off Alat' : 'Bayar saat Pick-up Selesai'}\n`;
-  waText += `💰 *Biaya Service:* ${formatRupiah(selectedLaundryService.price)}\n\n`;
-  waText += `👤 *Nama Pemesan:* ${pName}\n`;
-  if (pPhone) waText += `📱 *WhatsApp:* ${pPhone}\n`;
-  waText += `----------------------------------------\n`;
-  waText += `Halo tim KAMERAD, saya ingin pesan layanan cuci & perawatan alat gunung ini!`;
-
-  closeLaundryBookingModal();
-  showToast('Membuka WhatsApp Basecamp...', 'success');
-  openWhatsAppURL(waText);
 }
 
 // Add Rental Gear to Cart
@@ -1923,6 +1925,17 @@ function openCheckoutModal() {
     return;
   }
   validateCODDateRule();
+
+  // Dynamically update Checkout Modal Destination label based on Category
+  const destLabel = document.getElementById('checkoutDestinationLabel');
+  if (destLabel) {
+    if (activeCartTab === 'rental') {
+      destLabel.innerHTML = `⛰️ Gunung / Destinasi Tujuan *`;
+    } else {
+      destLabel.innerHTML = `⛰️ Destinasi / Penggunaan Alat *`;
+    }
+  }
+
   document.getElementById('cartBackdrop').classList.remove('active');
 
   if (currentCustomer) {
@@ -1939,7 +1952,7 @@ function closeCheckoutModal() {
   document.getElementById('checkoutModal').classList.remove('active');
 }
 
-// Submit Order: Category-Aware Receipt Formatting based on Active Cart Tab
+// Submit Order: Category-Aware Receipt Formatting with Mandatory Destination & Exact Template
 async function submitOrderAndOpenWhatsApp(event) {
   event.preventDefault();
 
@@ -1952,11 +1965,12 @@ async function submitOrderAndOpenWhatsApp(event) {
 
   const nameInput = document.getElementById('custNameInput').value.trim();
   const phoneInput = document.getElementById('custPhoneInput').value.trim();
-  const notesInput = document.getElementById('custNotesInput').value.trim();
+  const destinationInput = document.getElementById('custDestinationInput') ? document.getElementById('custDestinationInput').value.trim() : '';
+  const notesInput = document.getElementById('custNotesInput') ? document.getElementById('custNotesInput').value.trim() : '';
   const customerEmail = currentCustomer ? currentCustomer.email : '';
 
-  if (!nameInput || !phoneInput) {
-    const msg = currentLang === 'id' ? 'Silakan isi Nama dan Nomor WhatsApp Anda.' : 'Please provide your Name and WhatsApp phone number.';
+  if (!nameInput || !phoneInput || !destinationInput) {
+    const msg = currentLang === 'id' ? 'Silakan isi Nama, Nomor WhatsApp, dan Destinasi Tujuan.' : 'Please provide your Name, WhatsApp number, and Destination.';
     showToast(msg, 'warning');
     return;
   }
@@ -1966,11 +1980,12 @@ async function submitOrderAndOpenWhatsApp(event) {
   const dpAmount = Math.round(grandTotal * (paymentSelection.dpPercent / 100));
   const balanceAmount = paymentSelection.method === 'dp' ? (grandTotal - dpAmount) : grandTotal;
 
-  let orderPrefix = 'KMRD-';
-  if (activeCartTab === 'laundry') orderPrefix = 'KMRD-LNDR-';
-  if (activeCartTab === 'sale') orderPrefix = 'KMRD-SHOP-';
+  // Order ID Format: #CD-(YYMMDD)-(001)-7 or category prefix
+  let orderPrefix = 'CD';
+  if (activeCartTab === 'laundry') orderPrefix = 'LNDR';
+  if (activeCartTab === 'sale') orderPrefix = 'SHOP';
 
-  const orderId = orderPrefix + Math.floor(1000 + Math.random() * 9000);
+  const orderId = generateKameradOrderID(orderPrefix);
 
   // 1. Silent Booking Log in Supabase with PENDING Status
   if (supabaseClient) {
@@ -1987,7 +2002,7 @@ async function submitOrderAndOpenWhatsApp(event) {
         p_grand_total: grandTotal,
         p_dp_amount: dpAmount,
         p_balance_amount: balanceAmount,
-        p_notes: notesInput,
+        p_notes: `Destinasi: ${destinationInput} | ${notesInput}`,
         p_items: activeTabItems.map(c => ({ id: c.id, name: c.name, qty: c.qty, itemType: c.itemType || 'rental', itemTotal: getItemTotalCost(c, durationDays), image: c.image }))
       });
 
@@ -2003,6 +2018,7 @@ async function submitOrderAndOpenWhatsApp(event) {
     customerName: nameInput,
     phone: phoneInput,
     customerEmail,
+    destination: destinationInput,
     startDate: activeCartTab === 'rental' ? rentalDates.startDate : 'N/A',
     endDate: activeCartTab === 'rental' ? rentalDates.endDate : 'N/A',
     durationDays: activeCartTab === 'rental' ? durationDays : 0,
@@ -2015,76 +2031,101 @@ async function submitOrderAndOpenWhatsApp(event) {
   });
   localStorage.setItem('kmrd_local_bookings', JSON.stringify(localBookings));
 
-  // 2. Category-Aware WhatsApp Message Construction
+  // 2. Exact WhatsApp Receipt Formatting per User Specifications
   let waText = '';
   if (activeCartTab === 'rental') {
-    waText += `🏕️ *PESANAN SEWA ALAT - KAMERAD BASECAMP*\n`;
+    const startFormatted = formatReceiptDate(rentalDates.startDate);
+    const endFormatted = formatReceiptDate(rentalDates.endDate);
+
+    waText += `🏕️ RENTAL - KAMERAD BASECAMP\n`;
     waText += `----------------------------------------\n`;
-    waText += `📋 *Order ID:* #${orderId}\n`;
-    waText += `👤 *Penyewa:* ${nameInput}\n`;
-    waText += `📱 *WhatsApp:* ${phoneInput}\n`;
-    waText += `📅 *Tanggal Sewa:* ${rentalDates.startDate} ➔ ${rentalDates.endDate} (${durationDays} Hari)\n\n`;
-    waText += `🎒 *DAFTAR ITEM SEWA:* \n`;
+    waText += `📋 Order ID: #${orderId}\n`;
+    waText += `👤 Penyewa: ${nameInput}\n`;
+    waText += `📱 WhatsApp: ${phoneInput}\n`;
+    waText += `⛰️ Destinasi: ${destinationInput}\n`;
+    waText += `📅 Tanggal Sewa: ${startFormatted} ➔ ${endFormatted} (${durationDays} Hari)\n\n`;
+    waText += `🎒 DAFTAR ITEM SEWA: \n`;
     activeTabItems.forEach(item => {
       const displayName = item.name_id || item.name;
       const itemTotal = getItemTotalCost(item, durationDays);
       waText += `• ${displayName} x${item.qty} (${formatRupiah(itemTotal)})\n`;
     });
-    waText += `\n💳 *METODE PEMBAYARAN:* ${paymentSelection.method === 'dp' ? `Down Payment (${paymentSelection.dpPercent}%)` : 'Full COD / Tunai di Basecamp'}\n`;
-    waText += `💰 *Total Biaya Sewa:* ${formatRupiah(grandTotal)}\n`;
+    waText += `\n💳 METODE PEMBAYARAN: ${paymentSelection.method === 'dp' ? `Down Payment (${paymentSelection.dpPercent}%)` : 'Full COD / Tunai di Basecamp'}\n`;
+    waText += `💰 Total Biaya Sewa: ${formatRupiah(grandTotal)}\n`;
     if (paymentSelection.method === 'dp') {
-      waText += `💵 *Down Payment (DP):* ${formatRupiah(dpAmount)}\n`;
-      waText += `💸 *Sisa Pembayaran di Basecamp:* ${formatRupiah(balanceAmount)}\n`;
-    } else {
-      waText += `📌 *Catatan COD:* Pengambilan barang di Basecamp pada tanggal ${rentalDates.startDate}\n`;
+      waText += `💸 Down Payment ${paymentSelection.dpPercent}%: ${formatRupiah(dpAmount)}\n`;
+      waText += `💸 Sisa Bayar saat Pengambilan: ${formatRupiah(balanceAmount)}\n`;
     }
+    waText += `📌 Catatan: Pengambilan barang di Basecamp pada tanggal ${rentalDates.startDate}\n`;
+    if (notesInput) {
+      waText += `📝 Catatan Tambahan: ${notesInput}\n`;
+    }
+    waText += `----------------------------------------\n`;
+    waText += `Kamerad web-app order`;
+
   } else if (activeCartTab === 'laundry') {
     const laundryPayStr = paymentSelection.laundryMethod === 'dropoff' 
       ? 'Bayar saat Drop-off Alat di Basecamp' 
       : 'Bayar saat Ambil Selesai (Pick-up)';
 
-    waText += `🧼 *PESANAN LAUNDRY & CARE - KAMERAD BASECAMP*\n`;
+    const sampleLaundry = activeTabItems.find(i => i.dropOffDate);
+    const dropStr = sampleLaundry ? sampleLaundry.dropOffDate : formatDateInput(new Date());
+    const pickStr = sampleLaundry ? sampleLaundry.pickUpDate : getCalculatedLaundryPickUpDate(dropStr);
+
+    const dropFormatted = formatReceiptDate(dropStr);
+    const pickFormatted = formatReceiptDate(pickStr);
+
+    waText += `🧼 LAUNDRY & CARE - KAMERAD BASECAMP\n`;
     waText += `----------------------------------------\n`;
-    waText += `📋 *Order ID:* #${orderId}\n`;
-    waText += `👤 *Nama Pemesan:* ${nameInput}\n`;
-    waText += `📱 *WhatsApp:* ${phoneInput}\n\n`;
-    waText += `🧺 *DAFTAR LAYANAN LAUNDRY:* \n`;
+    waText += `📋 Order ID: #${orderId}\n`;
+    waText += `👤 Pemesan: ${nameInput}\n`;
+    waText += `📱 WhatsApp: ${phoneInput}\n`;
+    waText += `⛰️ Destinasi / Penggunaan: ${destinationInput}\n`;
+    waText += `📅 Jadwal Laundry: ${dropFormatted} ➔ ${pickFormatted} (Standard 3 Hari)\n\n`;
+    waText += `🧺 DAFTAR LAYANAN LAUNDRY: \n`;
     activeTabItems.forEach(item => {
       const displayName = item.name_id || item.name;
       const itemTotal = getItemTotalCost(item, durationDays);
       waText += `• ${displayName} x${item.qty} (${formatRupiah(itemTotal)})\n`;
-      if (item.dropOffDate) {
-        waText += `  📅 Drop-off: ${item.dropOffDate} ➔ Pick-up Selesai: ${item.pickUpDate}\n`;
-      }
     });
-    waText += `\n💳 *METODE PEMBAYARAN:* ${laundryPayStr}\n`;
-    waText += `💰 *Total Biaya Laundry:* ${formatRupiah(grandTotal)}\n`;
+    waText += `\n💳 METODE PEMBAYARAN: ${laundryPayStr}\n`;
+    waText += `💰 Total Biaya Laundry: ${formatRupiah(grandTotal)}\n`;
+    waText += `📌 Catatan: Penyerahan alat ke Basecamp pada tanggal ${dropStr}\n`;
+    if (notesInput) {
+      waText += `📝 Catatan Tambahan: ${notesInput}\n`;
+    }
+    waText += `----------------------------------------\n`;
+    waText += `Kamerad web-app order`;
+
   } else if (activeCartTab === 'sale') {
     const kshopPayStr = paymentSelection.kshopMethod === 'cod' 
       ? 'Tunai di Basecamp (COD)' 
       : 'Transfer / Scan QRIS Basecamp';
 
-    waText += `🛒 *PEMBELIAN K-SHOP - KAMERAD BASECAMP*\n`;
+    const todayFormatted = formatReceiptDate(formatDateInput(new Date()));
+
+    waText += `🏷️ K-SHOP - KAMERAD BASECAMP\n`;
     waText += `----------------------------------------\n`;
-    waText += `📋 *Order ID:* #${orderId}\n`;
-    waText += `👤 *Nama Pembeli:* ${nameInput}\n`;
-    waText += `📱 *WhatsApp:* ${phoneInput}\n\n`;
-    waText += `🏷️ *DAFTAR PRODUK K-SHOP:* \n`;
+    waText += `📋 Order ID: #${orderId}\n`;
+    waText += `👤 Pembeli: ${nameInput}\n`;
+    waText += `📱 WhatsApp: ${phoneInput}\n`;
+    waText += `⛰️ Destinasi / Penggunaan: ${destinationInput}\n`;
+    waText += `📅 Tanggal Pemesanan: ${todayFormatted}\n\n`;
+    waText += `🛒 DAFTAR PRODUK K-SHOP: \n`;
     activeTabItems.forEach(item => {
       const displayName = item.name_id || item.name;
       const itemTotal = getItemTotalCost(item, durationDays);
       waText += `• ${displayName} x${item.qty} (${formatRupiah(itemTotal)})\n`;
     });
-    waText += `\n💳 *METODE PEMBAYARAN:* ${kshopPayStr}\n`;
-    waText += `💰 *Total Pembelian:* ${formatRupiah(grandTotal)}\n`;
+    waText += `\n💳 METODE PEMBAYARAN: ${kshopPayStr}\n`;
+    waText += `💰 Total Pembelian: ${formatRupiah(grandTotal)}\n`;
+    waText += `📌 Catatan: Pengambilan / Konfirmasi di Basecamp\n`;
+    if (notesInput) {
+      waText += `📝 Catatan Tambahan: ${notesInput}\n`;
+    }
+    waText += `----------------------------------------\n`;
+    waText += `Kamerad web-app order`;
   }
-
-  if (notesInput) {
-    waText += `\n📝 *Catatan Tambahan:* ${notesInput}\n`;
-  }
-
-  waText += `----------------------------------------\n`;
-  waText += `Dikirim dari web app KAMERAD basecamp edition`;
 
   closeCheckoutModal();
   showToast('Pesanan dikonfirmasi! Membuka WhatsApp Basecamp...', 'success');
