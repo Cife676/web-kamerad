@@ -14,23 +14,57 @@ const BASECAMP_WHATSAPP_NUMBER = '6281803590667';
 const ADMIN_USERNAME_CRED = 'Kamerad';
 const ADMIN_PASSWORD_CRED = 'KameradAdmin123';
 
-// Order ID Generator: #CD-(YYMMDD)-(daily counter 001, 002...)-7
-function generateKameradOrderID(prefix = 'CD') {
+// Database-Aware Real-Time Order ID Generator: #CD-(YYMMDD)-(001, 002...)-7
+async function fetchNextDailyOrderCode(prefix = 'CD') {
   const now = new Date();
   const yy = String(now.getFullYear()).slice(-2);
   const mm = String(now.getMonth() + 1).padStart(2, '0');
   const dd = String(now.getDate()).padStart(2, '0');
   const dateStr = `${yy}${mm}${dd}`;
 
-  let counterObj = JSON.parse(localStorage.getItem('kmrd_daily_counter') || '{"date":"","count":0}');
-  if (counterObj.date !== dateStr) {
-    counterObj = { date: dateStr, count: 1 };
-  } else {
-    counterObj.count += 1;
-  }
-  localStorage.setItem('kmrd_daily_counter', JSON.stringify(counterObj));
+  let maxCount = 0;
 
-  const countStr = String(counterObj.count).padStart(3, '0');
+  // 1. Query Supabase rentals table for today's highest order sequence
+  if (supabaseClient) {
+    try {
+      const { data, error } = await supabaseClient
+        .from('rentals')
+        .select('order_code');
+
+      if (!error && data && data.length > 0) {
+        data.forEach(row => {
+          if (row.order_code) {
+            const match = row.order_code.match(/(\d{6})(\d{3})7$/);
+            if (match && match[1] === dateStr) {
+              const num = parseInt(match[2], 10);
+              if (num > maxCount) maxCount = num;
+            }
+          }
+        });
+      }
+    } catch (err) {
+      console.error('Supabase daily order query error:', err);
+    }
+  }
+
+  // 2. Also check localBookings backup for today's highest count
+  const localList = JSON.parse(localStorage.getItem('kmrd_local_bookings') || '[]');
+  localList.forEach(b => {
+    const code = b.orderId || b.order_code || '';
+    const match = code.match(/(\d{6})(\d{3})7$/);
+    if (match && match[1] === dateStr) {
+      const num = parseInt(match[2], 10);
+      if (num > maxCount) maxCount = num;
+    }
+  });
+
+  // 3. Increment counter sequentially
+  const nextCount = maxCount + 1;
+  const countStr = String(nextCount).padStart(3, '0');
+
+  // Save to local counter state
+  localStorage.setItem('kmrd_daily_counter', JSON.stringify({ date: dateStr, count: nextCount }));
+
   return `${prefix}-${dateStr}${countStr}7`;
 }
 
@@ -807,7 +841,7 @@ function closeOpenTripConfirmModal() {
   if (modalBackdrop) modalBackdrop.classList.remove('active');
 }
 
-function submitTripRegistrationWA(event) {
+async function submitTripRegistrationWA(event) {
   event.preventDefault();
   if (!selectedTripForRegistration) return;
 
@@ -819,7 +853,7 @@ function submitTripRegistrationWA(event) {
     return;
   }
 
-  const orderId = generateKameradOrderID('CD');
+  const orderId = await fetchNextDailyOrderCode('CD');
 
   let waText = '';
   if (currentLang === 'id') {
@@ -1980,8 +2014,8 @@ async function submitOrderAndOpenWhatsApp(event) {
   const dpAmount = Math.round(grandTotal * (paymentSelection.dpPercent / 100));
   const balanceAmount = paymentSelection.method === 'dp' ? (grandTotal - dpAmount) : grandTotal;
 
-  // Uniform Order ID Format for all categories: #CD-(YYMMDD)-(001)-7
-  const orderId = generateKameradOrderID('CD');
+  // Real-Time Database-Aware Order ID Format: #CD-(YYMMDD)-(001)-7
+  const orderId = await fetchNextDailyOrderCode('CD');
 
   // 1. Silent Booking Log in Supabase with PENDING Status
   if (supabaseClient) {
