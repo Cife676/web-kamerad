@@ -24,16 +24,16 @@ async function fetchNextDailyOrderCode(prefix = 'CD') {
 
   let maxCount = 0;
 
-  // 1. Query Supabase rentals table for today's active/confirmed orders (ignore cancelled/abandoned)
+  // 1. Query Supabase rentals table for ALL order attempts today (unconditional increment)
   if (supabaseClient) {
     try {
       const { data, error } = await supabaseClient
         .from('rentals')
-        .select('order_code, status');
+        .select('order_code');
 
       if (!error && data && data.length > 0) {
         data.forEach(row => {
-          if (row.order_code && row.status !== 'CANCELLED') {
+          if (row.order_code) {
             const match = row.order_code.match(/(\d{6})(\d{3})7$/);
             if (match && match[1] === dateStr) {
               const num = parseInt(match[2], 10);
@@ -47,16 +47,14 @@ async function fetchNextDailyOrderCode(prefix = 'CD') {
     }
   }
 
-  // 2. Also check localBookings backup for today's active count (ignore CANCELLED)
+  // 2. Also check localBookings backup for today's count
   const localList = JSON.parse(localStorage.getItem('kmrd_local_bookings') || '[]');
   localList.forEach(b => {
-    if (b.status !== 'CANCELLED') {
-      const code = b.orderId || b.order_code || '';
-      const match = code.match(/(\d{6})(\d{3})7$/);
-      if (match && match[1] === dateStr) {
-        const num = parseInt(match[2], 10);
-        if (num > maxCount) maxCount = num;
-      }
+    const code = b.orderId || b.order_code || '';
+    const match = code.match(/(\d{6})(\d{3})7$/);
+    if (match && match[1] === dateStr) {
+      const num = parseInt(match[2], 10);
+      if (num > maxCount) maxCount = num;
     }
   });
 
@@ -1183,15 +1181,31 @@ function switchAuthTab(tab) {
   }
 }
 
-// Handle Customer Register
-function handleCustomerRegister(event) {
+// Handle Customer Register & Save to Database
+async function handleCustomerRegister(event) {
   event.preventDefault();
   const name = document.getElementById('regNameInput').value.trim();
   const phone = document.getElementById('regPhoneInput').value.trim();
   const email = document.getElementById('regEmailInput').value.trim();
 
+  if (!name || !phone || !email) {
+    showToast('Silakan lengkapi Nama, WhatsApp, dan Email.', 'warning');
+    return;
+  }
+
   currentCustomer = { name, phone, email };
   localStorage.setItem('kmrd_customer_session', JSON.stringify(currentCustomer));
+
+  // Save Customer Profile to Supabase Database
+  if (supabaseClient) {
+    try {
+      await supabaseClient.from('customers').upsert([
+        { name, phone, email, created_at: new Date().toISOString() }
+      ], { onConflict: 'email' });
+    } catch (err) {
+      console.error('Supabase customer register error:', err);
+    }
+  }
 
   closeAuthModal();
   renderNavAuthButtons();
@@ -1201,25 +1215,68 @@ function handleCustomerRegister(event) {
   if (custNameInput) custNameInput.value = name;
   if (custPhoneInput) custPhoneInput.value = phone;
 
-  showToast(`Selamat datang, ${name}! Link konfirmasi telah dikirim ke ${email}`, 'success');
+  showToast(`Selamat datang, ${name}! Akun Anda telah terdaftar & tersimpan di database.`, 'success');
+
+  // Auto proceed to checkout if user has items in cart
+  if (cart.length > 0) {
+    openCheckoutModal();
+  }
 }
 
-// Handle Customer Login
-function handleCustomerLogin(event) {
+// Handle Customer Login & Sync with Database
+async function handleCustomerLogin(event) {
   event.preventDefault();
   const email = document.getElementById('loginEmailInput').value.trim();
-  const name = email.split('@')[0];
+  if (!email) return;
 
-  currentCustomer = { name: name.charAt(0).toUpperCase() + name.slice(1), phone: '', email };
+  let foundCustomer = null;
+
+  if (supabaseClient) {
+    try {
+      const { data, error } = await supabaseClient
+        .from('customers')
+        .select('*')
+        .eq('email', email)
+        .single();
+
+      if (!error && data) {
+        foundCustomer = { name: data.name, phone: data.phone, email: data.email };
+      }
+    } catch (err) {
+      console.error('Supabase customer login error:', err);
+    }
+  }
+
+  if (!foundCustomer) {
+    const name = email.split('@')[0];
+    foundCustomer = { name: name.charAt(0).toUpperCase() + name.slice(1), phone: '', email };
+
+    if (supabaseClient) {
+      try {
+        await supabaseClient.from('customers').insert([foundCustomer]);
+      } catch (err) {
+        console.error('Supabase insert new customer error:', err);
+      }
+    }
+  }
+
+  currentCustomer = foundCustomer;
   localStorage.setItem('kmrd_customer_session', JSON.stringify(currentCustomer));
 
   closeAuthModal();
   renderNavAuthButtons();
 
   const custNameInput = document.getElementById('custNameInput');
-  if (custNameInput) custNameInput.value = currentCustomer.name;
+  const custPhoneInput = document.getElementById('custPhoneInput');
+  if (custNameInput) custNameInput.value = currentCustomer.name || '';
+  if (custPhoneInput && currentCustomer.phone) custPhoneInput.value = currentCustomer.phone;
 
   showToast(`Berhasil masuk sebagai ${currentCustomer.name}!`, 'success');
+
+  // Auto proceed to checkout if user has items in cart
+  if (cart.length > 0) {
+    openCheckoutModal();
+  }
 }
 
 function handleCustomerLogout() {
@@ -1996,6 +2053,14 @@ function openCheckoutModal() {
     showToast(`${tabName} Anda kosong!`, 'warning');
     return;
   }
+
+  // MANDATORY LOGIN GUARD: Require Account Login Before Checkout
+  if (!currentCustomer) {
+    showToast('Silakan Login / Daftar Akun terlebih dahulu sebelum Checkout!', 'warning');
+    openAuthModal('login');
+    return;
+  }
+
   validateCODDateRule();
 
   const destWrapper = document.getElementById('custDestinationWrapper');
