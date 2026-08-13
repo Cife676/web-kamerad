@@ -678,13 +678,19 @@
       <!-- Login Form -->
       <form id="customerLoginForm" onsubmit="handleCustomerLogin(event)">
         <div class="modal-body">
+          <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); padding: 0.75rem; border-radius: var(--radius-sm); font-size: 0.8rem; color: #93c5fd; margin-bottom: 0.75rem;">
+            🔑 <strong>Catatan:</strong> Hanya Email & Username yang sudah terdaftar yang dapat digunakan untuk Login.
+          </div>
           <div class="input-field-wrapper">
-            <label for="loginEmailInput">Email *</label>
-            <input type="email" id="loginEmailInput" class="search-input" style="padding-left: 1rem;" placeholder="name@example.com" required>
+            <label for="loginEmailInput">Email atau Username *</label>
+            <input type="text" id="loginEmailInput" class="search-input" style="padding-left: 1rem;" placeholder="e.g. name@example.com / username" required>
           </div>
           <div class="input-field-wrapper">
             <label for="loginPasswordInput">Password *</label>
-            <input type="password" id="loginPasswordInput" class="search-input" style="padding-left: 1rem;" placeholder="••••••••" required>
+            <input type="password" id="loginPasswordInput" class="search-input" style="padding-left: 1rem;" placeholder="Masukkan password Anda" required>
+          </div>
+          <div style="font-size: 0.8rem; color: var(--text-muted); text-align: center; margin-top: 0.5rem;">
+            Belum punya akun? <a href="#" onclick="switchAuthTab('register'); return false;" style="color: var(--green-success); font-weight: 700;">Daftar Akun Baru Baru di sini</a>
           </div>
         </div>
         <div class="modal-footer">
@@ -697,28 +703,30 @@
       <form id="customerRegisterForm" onsubmit="handleCustomerRegister(event)" style="display: none;">
         <div class="modal-body">
           <div class="input-field-wrapper">
+            <label for="regUsernameInput">Username *</label>
+            <input type="text" id="regUsernameInput" class="search-input" style="padding-left: 1rem;" placeholder="e.g. alex26" required>
+          </div>
+          <div class="input-field-wrapper">
             <label for="regNameInput">Nama Lengkap *</label>
-            <input type="text" id="regNameInput" class="search-input" style="padding-left: 1rem;" placeholder="Alex Harrison" required>
+            <input type="text" id="regNameInput" class="search-input" style="padding-left: 1rem;" placeholder="e.g. Alex Harrison" required>
           </div>
           <div class="input-field-wrapper">
             <label for="regPhoneInput">Nomor WhatsApp *</label>
-            <input type="tel" id="regPhoneInput" class="search-input" style="padding-left: 1rem;" placeholder="082299318955" required>
+            <input type="tel" id="regPhoneInput" class="search-input" style="padding-left: 1rem;" placeholder="e.g. 082299318955" required>
           </div>
           <div class="input-field-wrapper">
             <label for="regEmailInput">Email *</label>
-            <input type="email" id="regEmailInput" class="search-input" style="padding-left: 1rem;" placeholder="name@example.com" required>
+            <input type="email" id="regEmailInput" class="search-input" style="padding-left: 1rem;" placeholder="e.g. name@example.com" required>
           </div>
           <div class="input-field-wrapper">
-            <label for="regPasswordInput">Password *</label>
-            <input type="password" id="regPasswordInput" class="search-input" style="padding-left: 1rem;" placeholder="••••••••" minlength="6" required>
+            <label for="regPasswordInput">Password (Minimal 6 Karakter) *</label>
+            <input type="password" id="regPasswordInput" class="search-input" style="padding-left: 1rem;" placeholder="Buat password aman" minlength="6" required>
           </div>
           <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); padding: 0.75rem; border-radius: var(--radius-sm); font-size: 0.8rem; color: #6ee7b7;">
-            📧 Link konfirmasi verifikasi email akan dikirim otomatis ke alamat email Anda.
-          </div>
-        </div>
+            ✅ Akun Anda akan tersimpan aman di database. Gunakan Email/Username & Password ini untuk Login.
         <div class="modal-footer">
           <button type="button" class="btn-secondary" onclick="closeAuthModal()">Batal</button>
-          <button type="submit" class="btn-primary">Daftar Akun Baru</button>
+          <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">Daftar Akun Baru</button>
         </div>
       </form>
     </div>

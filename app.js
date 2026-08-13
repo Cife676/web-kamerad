@@ -1181,31 +1181,72 @@ function switchAuthTab(tab) {
   }
 }
 
-// Handle Customer Register & Save to Database
+// Local Registered Accounts Storage Backup
+let localUsers = JSON.parse(localStorage.getItem('kmrd_registered_users') || '[]');
+
+// Handle Customer Register & Save to Database with Username & Password
 async function handleCustomerRegister(event) {
   event.preventDefault();
+  const username = document.getElementById('regUsernameInput') ? document.getElementById('regUsernameInput').value.trim().toLowerCase() : '';
   const name = document.getElementById('regNameInput').value.trim();
   const phone = document.getElementById('regPhoneInput').value.trim();
-  const email = document.getElementById('regEmailInput').value.trim();
+  const email = document.getElementById('regEmailInput').value.trim().toLowerCase();
+  const password = document.getElementById('regPasswordInput').value;
 
-  if (!name || !phone || !email) {
-    showToast('Silakan lengkapi Nama, WhatsApp, dan Email.', 'warning');
+  if (!username || !name || !phone || !email || !password) {
+    showToast('Silakan lengkapi Username, Nama, WhatsApp, Email, dan Password.', 'warning');
     return;
   }
 
-  currentCustomer = { name, phone, email };
-  localStorage.setItem('kmrd_customer_session', JSON.stringify(currentCustomer));
+  if (password.length < 6) {
+    showToast('Password minimal harus 6 karakter!', 'warning');
+    return;
+  }
 
-  // Save Customer Profile to Supabase Database
+  // Check if Username or Email already exists locally
+  const existingLocal = localUsers.find(u => u.email === email || u.username === username);
+  if (existingLocal) {
+    showToast('❌ Email atau Username ini sudah terdaftar! Silakan Login.', 'warning');
+    switchAuthTab('login');
+    return;
+  }
+
+  // Check Supabase Database for existing account
   if (supabaseClient) {
     try {
-      await supabaseClient.from('customers').upsert([
-        { name, phone, email, created_at: new Date().toISOString() }
-      ], { onConflict: 'email' });
+      const { data, error } = await supabaseClient
+        .from('customers')
+        .select('*')
+        .or(`email.eq.${email},username.eq.${username}`);
+
+      if (!error && data && data.length > 0) {
+        showToast('❌ Email atau Username ini sudah terdaftar! Silakan Login.', 'warning');
+        switchAuthTab('login');
+        return;
+      }
+    } catch (err) {
+      console.error('Error checking existing customer in Supabase:', err);
+    }
+  }
+
+  // Create User Account Object
+  const newUserRecord = { username, name, phone, email, password, created_at: new Date().toISOString() };
+
+  // 1. Save to Local Storage
+  localUsers.push(newUserRecord);
+  localStorage.setItem('kmrd_registered_users', JSON.stringify(localUsers));
+
+  // 2. Save Customer Profile & Password securely to Supabase Database
+  if (supabaseClient) {
+    try {
+      await supabaseClient.from('customers').upsert([newUserRecord], { onConflict: 'email' });
     } catch (err) {
       console.error('Supabase customer register error:', err);
     }
   }
+
+  currentCustomer = { username, name, phone, email };
+  localStorage.setItem('kmrd_customer_session', JSON.stringify(currentCustomer));
 
   closeAuthModal();
   renderNavAuthButtons();
@@ -1215,7 +1256,7 @@ async function handleCustomerRegister(event) {
   if (custNameInput) custNameInput.value = name;
   if (custPhoneInput) custPhoneInput.value = phone;
 
-  showToast(`Selamat datang, ${name}! Akun Anda telah terdaftar & tersimpan di database.`, 'success');
+  showToast(`🎉 Registrasi berhasil! Akun tersimpan aman di database.`, 'success');
 
   // Auto proceed to checkout if user has items in cart
   if (cart.length > 0) {
@@ -1223,44 +1264,49 @@ async function handleCustomerRegister(event) {
   }
 }
 
-// Handle Customer Login & Sync with Database
+// Handle Customer Login (Strict Credentials & Password Verification)
 async function handleCustomerLogin(event) {
   event.preventDefault();
-  const email = document.getElementById('loginEmailInput').value.trim();
-  if (!email) return;
+  const inputIdentifier = document.getElementById('loginEmailInput').value.trim().toLowerCase();
+  const inputPassword = document.getElementById('loginPasswordInput').value;
 
-  let foundCustomer = null;
+  if (!inputIdentifier || !inputPassword) {
+    showToast('Silakan isi Email/Username dan Password Anda.', 'warning');
+    return;
+  }
 
-  if (supabaseClient) {
+  let foundUser = null;
+
+  // 1. Check Local Registered Users List
+  foundUser = localUsers.find(u => (u.email === inputIdentifier || u.username === inputIdentifier) && u.password === inputPassword);
+
+  // 2. Check Supabase Database if not found locally
+  if (!foundUser && supabaseClient) {
     try {
       const { data, error } = await supabaseClient
         .from('customers')
         .select('*')
-        .eq('email', email)
-        .single();
+        .or(`email.eq.${inputIdentifier},username.eq.${inputIdentifier}`);
 
-      if (!error && data) {
-        foundCustomer = { name: data.name, phone: data.phone, email: data.email };
+      if (!error && data && data.length > 0) {
+        const matched = data.find(u => (u.email === inputIdentifier || u.username === inputIdentifier) && u.password === inputPassword);
+        if (matched) {
+          foundUser = matched;
+        }
       }
     } catch (err) {
-      console.error('Supabase customer login error:', err);
+      console.error('Supabase customer login query error:', err);
     }
   }
 
-  if (!foundCustomer) {
-    const name = email.split('@')[0];
-    foundCustomer = { name: name.charAt(0).toUpperCase() + name.slice(1), phone: '', email };
-
-    if (supabaseClient) {
-      try {
-        await supabaseClient.from('customers').insert([foundCustomer]);
-      } catch (err) {
-        console.error('Supabase insert new customer error:', err);
-      }
-    }
+  // STRICT CREDENTIAL VERIFICATION: Reject if unregistered or wrong password
+  if (!foundUser) {
+    showToast('❌ Login Gagal! Email/Username atau Password salah. Silakan periksa atau Daftar Akun baru.', 'warning');
+    return;
   }
 
-  currentCustomer = foundCustomer;
+  // Successful Login
+  currentCustomer = { username: foundUser.username, name: foundUser.name, phone: foundUser.phone, email: foundUser.email };
   localStorage.setItem('kmrd_customer_session', JSON.stringify(currentCustomer));
 
   closeAuthModal();
@@ -1271,7 +1317,7 @@ async function handleCustomerLogin(event) {
   if (custNameInput) custNameInput.value = currentCustomer.name || '';
   if (custPhoneInput && currentCustomer.phone) custPhoneInput.value = currentCustomer.phone;
 
-  showToast(`Berhasil masuk sebagai ${currentCustomer.name}!`, 'success');
+  showToast(`✅ Berhasil masuk sebagai ${currentCustomer.name}!`, 'success');
 
   // Auto proceed to checkout if user has items in cart
   if (cart.length > 0) {
