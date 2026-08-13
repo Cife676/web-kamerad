@@ -24,16 +24,16 @@ async function fetchNextDailyOrderCode(prefix = 'CD') {
 
   let maxCount = 0;
 
-  // 1. Query Supabase rentals table for today's highest order sequence
+  // 1. Query Supabase rentals table for today's active/confirmed orders (ignore cancelled/abandoned)
   if (supabaseClient) {
     try {
       const { data, error } = await supabaseClient
         .from('rentals')
-        .select('order_code');
+        .select('order_code, status');
 
       if (!error && data && data.length > 0) {
         data.forEach(row => {
-          if (row.order_code) {
+          if (row.order_code && row.status !== 'CANCELLED') {
             const match = row.order_code.match(/(\d{6})(\d{3})7$/);
             if (match && match[1] === dateStr) {
               const num = parseInt(match[2], 10);
@@ -47,14 +47,16 @@ async function fetchNextDailyOrderCode(prefix = 'CD') {
     }
   }
 
-  // 2. Also check localBookings backup for today's highest count
+  // 2. Also check localBookings backup for today's active count (ignore CANCELLED)
   const localList = JSON.parse(localStorage.getItem('kmrd_local_bookings') || '[]');
   localList.forEach(b => {
-    const code = b.orderId || b.order_code || '';
-    const match = code.match(/(\d{6})(\d{3})7$/);
-    if (match && match[1] === dateStr) {
-      const num = parseInt(match[2], 10);
-      if (num > maxCount) maxCount = num;
+    if (b.status !== 'CANCELLED') {
+      const code = b.orderId || b.order_code || '';
+      const match = code.match(/(\d{6})(\d{3})7$/);
+      if (match && match[1] === dateStr) {
+        const num = parseInt(match[2], 10);
+        if (num > maxCount) maxCount = num;
+      }
     }
   });
 
