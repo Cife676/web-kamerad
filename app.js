@@ -14,7 +14,7 @@ const BASECAMP_WHATSAPP_NUMBER = '6281803590667';
 const ADMIN_USERNAME_CRED = 'Kamerad';
 const ADMIN_PASSWORD_CRED = 'KameradAdmin123';
 
-// Database-Aware Real-Time Order ID Generator: #CD-(YYMMDD)-(001, 002...)-7
+// Database-Aware Real-Time Order ID Generator: #PRE-(YYMMDD)-(001, 002...)-7
 async function fetchNextDailyOrderCode(prefix = 'CD') {
   const now = new Date();
   const yy = String(now.getFullYear()).slice(-2);
@@ -249,6 +249,16 @@ let selectedLaundryDropOffDate = formatDateInput(new Date());
 // Multi-Category Active Cart Tab ('rental', 'laundry', 'sale')
 let activeCartTab = 'rental';
 
+// Category-Specific Payment & Delivery Selection State
+let paymentSelection = {
+  method: 'dp',                // 'dp' or 'cod' for rental
+  rentalDpMethod: 'Transfer BCA', // 'Transfer BCA' or 'QRIS'
+  dpPercent: 50,
+  laundryMethod: 'dropoff_cash', // 'dropoff_cash' (Cash On Drop-off), 'transfer', 'qris'
+  kshopMethod: 'transfer',       // 'transfer' (Transfer / QRIS), 'cod' (Tunai di Basecamp)
+  kshopDelivery: 'pickup'        // 'pickup' (Self Pickup), 'courier' (Via Kurir)
+};
+
 // Gear Database
 let GEAR_CATALOG = [
   {
@@ -479,14 +489,6 @@ let rentalDates = {
   endDate: formatDateInput(endDateDefault)
 };
 
-// Category-Specific Payment Selection State
-let paymentSelection = {
-  method: 'dp',        // 'dp' or 'cod' for rental
-  dpPercent: 50,
-  laundryMethod: 'dropoff', // 'dropoff' (Saat Drop-off) or 'pickup' (Saat Pick-up Selesai)
-  kshopMethod: 'cod'       // 'cod' (Tunai di Basecamp) or 'transfer' (Transfer / QRIS Basecamp)
-};
-
 // Select Payment Method for any category
 function selectPaymentMethod(category, method) {
   if (category === 'rental') {
@@ -497,6 +499,11 @@ function selectPaymentMethod(category, method) {
   } else if (category === 'kshop') {
     paymentSelection.kshopMethod = method;
   }
+  updateCartUI();
+}
+
+function selectKShopDelivery(deliveryMethod) {
+  paymentSelection.kshopDelivery = deliveryMethod;
   updateCartUI();
 }
 
@@ -749,7 +756,7 @@ function renderNavAuthButtons() {
   }
 }
 
-// Render Open Trips Grid (Direct WhatsApp Registration with Confirmation Modal)
+// Render Open Trips Grid (Walk With Kamerad)
 function renderOpenTripsCatalog() {
   const grid = document.getElementById('openTripGrid');
   if (!grid) return;
@@ -785,7 +792,7 @@ function renderOpenTripsCatalog() {
   }).join('');
 }
 
-// Open Trip Registration Confirmation Modal (Prevents accidental WhatsApp redirect)
+// Open Trip Registration Confirmation Modal (Walk With Kamerad)
 function openTripRegistrationModal(tripId) {
   const trip = OPEN_TRIPS.find(t => t.id === tripId);
   if (!trip) return;
@@ -802,26 +809,32 @@ function openTripRegistrationModal(tripId) {
       <div style="display: flex; gap: 0.85rem; background: var(--bg-card); padding: 0.85rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); align-items: center;">
         <img src="${trip.image}" alt="${trip.title}" style="width: 76px; height: 76px; object-fit: cover; border-radius: var(--radius-sm);">
         <div>
-          <span style="font-size: 0.72rem; color: #a855f7; font-weight: 800;">⛰️ OPEN TRIP EKSPEDISI</span>
+          <span style="font-size: 0.72rem; color: #a855f7; font-weight: 800;">⛰️ WALK WITH KAMERAD</span>
           <h4 style="font-size: 1rem; color: #fff; margin: 2px 0;">${trip.title}</h4>
           <div style="font-size: 0.8rem; color: var(--text-muted);">🗓️ ${trip.dateRange} (${trip.duration})</div>
           <div style="font-size: 0.9rem; font-weight: 800; color: var(--green-success); margin-top: 2px;">${formatRupiah(trip.price)} / pax</div>
         </div>
       </div>
 
-      <div style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); padding: 0.75rem; border-radius: var(--radius-sm); font-size: 0.82rem; color: #d8b4fe;">
-        ℹ️ <strong>Konfirmasi Pendaftaran:</strong> Anda akan terhubung langsung ke WhatsApp Resmi KAMERAD (+62 818-0359-0667) untuk mengonfirmasi partisipasi ekspedisi ini.
-      </div>
-
       <form onsubmit="submitTripRegistrationWA(event)">
         <div class="input-field-wrapper" style="margin-bottom: 0.75rem;">
-          <label for="tripParticipantName">Nama Lengkap Peserta *</label>
+          <label for="tripPaxCount">👤 Jumlah Peserta *</label>
+          <input type="number" id="tripPaxCount" class="search-input" style="padding-left: 1rem;" value="1" min="1" max="30" required>
+        </div>
+
+        <div class="input-field-wrapper" style="margin-bottom: 0.75rem;">
+          <label for="tripParticipantName">👤 Nama Ketua / Peserta *</label>
           <input type="text" id="tripParticipantName" class="search-input" style="padding-left: 1rem;" placeholder="e.g. Alex Harrison" value="${defaultName}" required>
         </div>
 
-        <div class="input-field-wrapper" style="margin-bottom: 1rem;">
-          <label for="tripParticipantPhone">Nomor WhatsApp *</label>
+        <div class="input-field-wrapper" style="margin-bottom: 0.75rem;">
+          <label for="tripParticipantPhone">📱 Nomor WhatsApp *</label>
           <input type="tel" id="tripParticipantPhone" class="search-input" style="padding-left: 1rem;" placeholder="e.g. 081803590667" value="${defaultPhone}" required>
+        </div>
+
+        <div class="input-field-wrapper" style="margin-bottom: 1rem;">
+          <label for="tripNotes">📌 Catatan Tambahan (Opsional)</label>
+          <input type="text" id="tripNotes" class="search-input" style="padding-left: 1rem;" placeholder="e.g. Request tenda khusus jika ada">
         </div>
 
         <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
@@ -843,44 +856,38 @@ function closeOpenTripConfirmModal() {
   if (modalBackdrop) modalBackdrop.classList.remove('active');
 }
 
+// Walk With Kamerad Receipt Generator (Prefix #NC-)
 async function submitTripRegistrationWA(event) {
   event.preventDefault();
   if (!selectedTripForRegistration) return;
 
+  const paxCount = document.getElementById('tripPaxCount') ? document.getElementById('tripPaxCount').value : '1';
   const pName = document.getElementById('tripParticipantName').value.trim();
   const pPhone = document.getElementById('tripParticipantPhone').value.trim();
+  const tripNotes = document.getElementById('tripNotes') ? document.getElementById('tripNotes').value.trim() : '';
 
   if (!pName || !pPhone) {
     showToast('Silakan lengkapi Nama dan Nomor WhatsApp Anda.', 'warning');
     return;
   }
 
-  const orderId = await fetchNextDailyOrderCode('CD');
+  const orderId = await fetchNextDailyOrderCode('NC');
 
   let waText = '';
-  if (currentLang === 'id') {
-    waText += `⛰️ *PENDAFTARAN OPEN TRIP - KAMERAD BASECAMP*\n`;
-    waText += `----------------------------------------\n`;
-    waText += `📋 *Order ID:* #${orderId}\n`;
-    waText += `🏔️ *Ekspedisi:* ${selectedTripForRegistration.title}\n`;
-    waText += `🗓️ *Jadwal Ekspedisi:* ${selectedTripForRegistration.dateRange} (${selectedTripForRegistration.duration})\n`;
-    waText += `💰 *Biaya Ekspedisi:* ${formatRupiah(selectedTripForRegistration.price)} / pax\n\n`;
-    waText += `👤 *Nama Peserta:* ${pName}\n`;
-    waText += `📱 *WhatsApp:* ${pPhone}\n`;
-    waText += `----------------------------------------\n`;
-    waText += `Kamerad web-app order`;
-  } else {
-    waText += `⛰️ *OPEN TRIP REGISTRATION - KAMERAD BASECAMP*\n`;
-    waText += `----------------------------------------\n`;
-    waText += `📋 *Order ID:* #${orderId}\n`;
-    waText += `🏔️ *Expedition:* ${selectedTripForRegistration.title}\n`;
-    waText += `🗓️ *Schedule:* ${selectedTripForRegistration.dateRange} (${selectedTripForRegistration.duration})\n`;
-    waText += `💰 *Expedition Fee:* ${formatRupiah(selectedTripForRegistration.price)} / pax\n\n`;
-    waText += `👤 *Participant Name:* ${pName}\n`;
-    waText += `📱 *WhatsApp:* ${pPhone}\n`;
-    waText += `----------------------------------------\n`;
-    waText += `Kamerad web-app order`;
+  waText += `👣 *Walk With Kamerad*\n`;
+  waText += `—————————\n\n`;
+  waText += `📋 *Order ID:* #${orderId}\n`;
+  waText += `🏔️ *Ekspedisi:* ${selectedTripForRegistration.title}\n`;
+  waText += `🗓️ *Jadwal:* ${selectedTripForRegistration.dateRange}\n`;
+  waText += `💰 *Biaya:* ${formatRupiah(selectedTripForRegistration.price)} / pax\n\n`;
+  waText += `👤 *Jumlah Peserta:* ${paxCount} Peserta\n`;
+  waText += `👤 *Nama Ketua:* ${pName}\n`;
+  waText += `📱 *WhatsApp:* ${pPhone}\n`;
+  if (tripNotes) {
+    waText += `📌 *Catatan:* ${tripNotes}\n`;
   }
+  waText += `\n—————————\n`;
+  waText += `Kamerad Web App`;
 
   closeOpenTripConfirmModal();
   showToast('Membuka WhatsApp Basecamp...', 'success');
@@ -996,7 +1003,8 @@ function renderLaundryModalContent() {
 
   const displayName = currentLang === 'id' ? (selectedLaundryService.name_id || selectedLaundryService.name) : selectedLaundryService.name;
   const displayDesc = currentLang === 'id' ? (selectedLaundryService.desc_id || selectedLaundryService.desc) : selectedLaundryService.desc;
-  const pickUpDateStr = getCalculatedLaundryPickUpDate(selectedLaundryDropOffDate);
+  const pickUpDateStr = formatReceiptDate(getCalculatedLaundryPickUpDate(selectedLaundryDropOffDate));
+  const dropOffDateStr = formatReceiptDate(selectedLaundryDropOffDate);
 
   modalBody.innerHTML = `
     <div style="display: flex; flex-direction: column; gap: 1rem;">
@@ -1031,12 +1039,12 @@ function renderLaundryModalContent() {
       <!-- Date Pickers -->
       <div style="background: var(--bg-card); padding: 0.85rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); display: flex; flex-direction: column; gap: 0.75rem;">
         <div class="input-field-wrapper">
-          <label for="laundryDropOffInput">📅 Tanggal Antar Alat (Drop-off Date) *</label>
+          <label for="laundryDropOffInput">📅 Tanggal Antar Alat (Drop Off Date) *</label>
           <input type="date" id="laundryDropOffInput" class="date-input" value="${selectedLaundryDropOffDate}" onchange="updateLaundryDropOffDate(this.value)" min="${formatDateInput(new Date())}">
         </div>
 
         <div style="background: rgba(96, 165, 250, 0.1); border: 1px solid rgba(96, 165, 250, 0.3); padding: 0.65rem 0.85rem; border-radius: var(--radius-sm); font-size: 0.85rem; color: #93c5fd; display: flex; align-items: center; justify-content: space-between;">
-          <span>✨ <strong>Tanggal Selesai Pick-up:</strong></span>
+          <span>✨ <strong>Tanggal Selesai (Pick Up):</strong></span>
           <strong style="color: #fff; font-size: 0.95rem;">${pickUpDateStr} (Otomatis +3 Hari)</strong>
         </div>
       </div>
@@ -1054,13 +1062,15 @@ function renderLaundryModalContent() {
 function addConfiguredLaundryToCart() {
   if (!selectedLaundryService) return;
 
-  const pickUpDateStr = getCalculatedLaundryPickUpDate(selectedLaundryDropOffDate);
+  const rawPickUpStr = getCalculatedLaundryPickUpDate(selectedLaundryDropOffDate);
+  const pickUpDateStr = formatReceiptDate(rawPickUpStr);
+  const dropOffDateStr = formatReceiptDate(selectedLaundryDropOffDate);
   const displayName = currentLang === 'id' ? (selectedLaundryService.name_id || selectedLaundryService.name) : selectedLaundryService.name;
 
   const existingInCart = cart.find(c => c.id === selectedLaundryService.id);
   if (existingInCart) {
     existingInCart.qty += 1;
-    existingInCart.dropOffDate = selectedLaundryDropOffDate;
+    existingInCart.dropOffDate = dropOffDateStr;
     existingInCart.pickUpDate = pickUpDateStr;
   } else {
     cart.push({
@@ -1072,7 +1082,7 @@ function addConfiguredLaundryToCart() {
       image: selectedLaundryService.image,
       itemType: 'laundry',
       timingOption: 'Standard (3 Hari)',
-      dropOffDate: selectedLaundryDropOffDate,
+      dropOffDate: dropOffDateStr,
       pickUpDate: pickUpDateStr,
       qty: 1
     });
@@ -1678,11 +1688,11 @@ function updateCartUI() {
     if (paymentBox) {
       paymentBox.style.display = 'block';
       paymentBox.innerHTML = `
-        <span class="payment-choice-title">💳 Pilih Metode Pembayaran Rental</span>
+        <span class="payment-choice-title">💳 Pilih Metode Pembayaran Booking</span>
         <div class="payment-options-grid">
           <label class="payment-radio-card ${paymentSelection.method === 'dp' ? 'selected' : ''}" id="dpRadioCard" onclick="selectPaymentMethod('rental', 'dp')">
             <input type="radio" name="paymentOption" value="dp" ${paymentSelection.method === 'dp' ? 'checked' : ''}>
-            <span class="payment-opt-name">Down Payment</span>
+            <span class="payment-opt-name">Down Payment (50%)</span>
             <span class="payment-opt-sub">Kunci booking dengan DP</span>
           </label>
           <label class="payment-radio-card ${paymentSelection.method === 'cod' ? 'selected' : ''}" id="codRadioCard" onclick="selectPaymentMethod('rental', 'cod')">
@@ -1692,12 +1702,14 @@ function updateCartUI() {
           </label>
         </div>
         ${paymentSelection.method === 'dp' ? `
-          <div id="dpPercentSelectorRow" style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.4rem;">
-            <span style="font-size: 0.8rem; color: var(--text-muted);">Pilih Persentase DP:</span>
-            <select id="dpPercentSelect" onchange="selectDPPercent(this.value)" style="background: var(--bg-main); color: #fff; border: 1px solid var(--border-subtle); border-radius: 4px; padding: 2px 6px; font-size: 0.82rem; font-weight: 700;">
-              <option value="50" ${paymentSelection.dpPercent === 50 ? 'selected' : ''}>50% Down Payment</option>
-              <option value="30" ${paymentSelection.dpPercent === 30 ? 'selected' : ''}>30% Down Payment</option>
-            </select>
+          <div style="margin-top: 0.4rem; display: flex; flex-direction: column; gap: 0.3rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span style="font-size: 0.8rem; color: var(--text-muted);">Metode Pembayaran DP:</span>
+              <select id="rentalDpMethodSelect" onchange="paymentSelection.rentalDpMethod = this.value" style="background: var(--bg-main); color: #fff; border: 1px solid var(--border-subtle); border-radius: 4px; padding: 2px 6px; font-size: 0.82rem; font-weight: 700;">
+                <option value="Transfer BCA" ${paymentSelection.rentalDpMethod === 'Transfer BCA' ? 'selected' : ''}>Transfer BCA</option>
+                <option value="QRIS" ${paymentSelection.rentalDpMethod === 'QRIS' ? 'selected' : ''}>Scan QRIS</option>
+              </select>
+            </div>
           </div>
         ` : ''}
       `;
@@ -1736,32 +1748,37 @@ function updateCartUI() {
     if (datesCard) {
       datesCard.style.display = 'block';
       const sampleLaundry = activeTabItems.find(i => i.dropOffDate);
-      const dropStr = sampleLaundry ? sampleLaundry.dropOffDate : formatDateInput(new Date());
-      const pickStr = sampleLaundry ? sampleLaundry.pickUpDate : getCalculatedLaundryPickUpDate(dropStr);
+      const dropStr = sampleLaundry ? sampleLaundry.dropOffDate : formatReceiptDate(formatDateInput(new Date()));
+      const pickStr = sampleLaundry ? sampleLaundry.pickUpDate : formatReceiptDate(getCalculatedLaundryPickUpDate(formatDateInput(new Date())));
 
       datesCard.innerHTML = `
         <div class="cart-dates-header">
           <span style="color: #60a5fa; font-weight: 800;">⏱️ JADWAL LAUNDRY & CARE</span>
           <span style="background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 2px 8px; border-radius: 4px; font-weight: 800;">Standard (3 Hari)</span>
         </div>
-        <p style="font-size: 0.8rem; color: #93c5fd; margin-top: 4px;">Tanggal Antar: <strong>${dropStr}</strong> ➔ Selesai: <strong>${pickStr}</strong></p>
+        <p style="font-size: 0.8rem; color: #93c5fd; margin-top: 4px;">Tanggal Antar (Drop Off): <strong>${dropStr}</strong> ➔ Selesai (Pick Up): <strong>${pickStr}</strong></p>
       `;
     }
 
     if (paymentBox) {
       paymentBox.style.display = 'block';
       paymentBox.innerHTML = `
-        <span class="payment-choice-title">💳 Pilih Metode Pembayaran Laundry</span>
-        <div class="payment-options-grid">
-          <label class="payment-radio-card ${paymentSelection.laundryMethod === 'dropoff' ? 'selected' : ''}" onclick="selectPaymentMethod('laundry', 'dropoff')">
-            <input type="radio" name="laundryPayOption" value="dropoff" ${paymentSelection.laundryMethod === 'dropoff' ? 'checked' : ''}>
-            <span class="payment-opt-name" style="color: #60a5fa;">Bayar saat Drop-off</span>
-            <span class="payment-opt-sub">Bayar saat antar barang di Basecamp</span>
+        <span class="payment-choice-title">💳 Pilih Metode Transaksi Laundry</span>
+        <div class="payment-options-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+          <label class="payment-radio-card ${paymentSelection.laundryMethod === 'dropoff_cash' ? 'selected' : ''}" onclick="selectPaymentMethod('laundry', 'dropoff_cash')">
+            <input type="radio" name="laundryPayOption" value="dropoff_cash" ${paymentSelection.laundryMethod === 'dropoff_cash' ? 'checked' : ''}>
+            <span class="payment-opt-name" style="color: #60a5fa; font-size: 0.78rem;">Cash On Drop-off</span>
+            <span class="payment-opt-sub">Bayar saat drop-off</span>
           </label>
-          <label class="payment-radio-card ${paymentSelection.laundryMethod === 'pickup' ? 'selected' : ''}" onclick="selectPaymentMethod('laundry', 'pickup')">
-            <input type="radio" name="laundryPayOption" value="pickup" ${paymentSelection.laundryMethod === 'pickup' ? 'checked' : ''}>
-            <span class="payment-opt-name" style="color: #60a5fa;">Bayar saat Ambil (Pick-up)</span>
-            <span class="payment-opt-sub">Bayar saat barang selesai dicuci</span>
+          <label class="payment-radio-card ${paymentSelection.laundryMethod === 'transfer' ? 'selected' : ''}" onclick="selectPaymentMethod('laundry', 'transfer')">
+            <input type="radio" name="laundryPayOption" value="transfer" ${paymentSelection.laundryMethod === 'transfer' ? 'checked' : ''}>
+            <span class="payment-opt-name" style="color: #60a5fa; font-size: 0.78rem;">Transfer</span>
+            <span class="payment-opt-sub">Transfer bank</span>
+          </label>
+          <label class="payment-radio-card ${paymentSelection.laundryMethod === 'qris' ? 'selected' : ''}" onclick="selectPaymentMethod('laundry', 'qris')">
+            <input type="radio" name="laundryPayOption" value="qris" ${paymentSelection.laundryMethod === 'qris' ? 'checked' : ''}>
+            <span class="payment-opt-name" style="color: #60a5fa; font-size: 0.78rem;">QRIS</span>
+            <span class="payment-opt-sub">Scan QRIS Basecamp</span>
           </label>
         </div>
       `;
@@ -1770,8 +1787,11 @@ function updateCartUI() {
     if (dpRow) dpRow.style.display = 'none';
     if (balanceRow) {
       balanceRow.style.display = 'flex';
-      balanceRow.querySelector('span:first-child').innerText = 'Metode Pembayaran:';
-      balanceRow.querySelector('span:last-child').innerText = paymentSelection.laundryMethod === 'dropoff' ? 'Bayar saat Drop-off' : 'Bayar saat Pick-up Selesai';
+      balanceRow.querySelector('span:first-child').innerText = 'Metode Transaksi:';
+      let lStr = 'Cash On Drop-off';
+      if (paymentSelection.laundryMethod === 'transfer') lStr = 'Transfer Bank';
+      if (paymentSelection.laundryMethod === 'qris') lStr = 'Scan QRIS Basecamp';
+      balanceRow.querySelector('span:last-child').innerText = lStr;
     }
 
     if (subtotalRow) subtotalRow.innerText = 'Tarif Cuci & Care';
@@ -1793,17 +1813,31 @@ function updateCartUI() {
     if (paymentBox) {
       paymentBox.style.display = 'block';
       paymentBox.innerHTML = `
-        <span class="payment-choice-title">💳 Pilih Metode Pembayaran K-Shop</span>
-        <div class="payment-options-grid">
+        <span class="payment-choice-title">💳 Metode Transaksi K-Shop</span>
+        <div class="payment-options-grid" style="margin-bottom: 0.6rem;">
+          <label class="payment-radio-card ${paymentSelection.kshopMethod === 'transfer' ? 'selected' : ''}" onclick="selectPaymentMethod('kshop', 'transfer')">
+            <input type="radio" name="kshopPayOption" value="transfer" ${paymentSelection.kshopMethod === 'transfer' ? 'checked' : ''}>
+            <span class="payment-opt-name" style="color: var(--green-success);">Transfer / QRIS</span>
+            <span class="payment-opt-sub">Transfer atau scan QRIS</span>
+          </label>
           <label class="payment-radio-card ${paymentSelection.kshopMethod === 'cod' ? 'selected' : ''}" onclick="selectPaymentMethod('kshop', 'cod')">
             <input type="radio" name="kshopPayOption" value="cod" ${paymentSelection.kshopMethod === 'cod' ? 'checked' : ''}>
             <span class="payment-opt-name" style="color: var(--green-success);">Tunai di Basecamp</span>
             <span class="payment-opt-sub">Bayar tunai di lokasi</span>
           </label>
-          <label class="payment-radio-card ${paymentSelection.kshopMethod === 'transfer' ? 'selected' : ''}" onclick="selectPaymentMethod('kshop', 'transfer')">
-            <input type="radio" name="kshopPayOption" value="transfer" ${paymentSelection.kshopMethod === 'transfer' ? 'checked' : ''}>
-            <span class="payment-opt-name" style="color: var(--green-success);">Transfer / QRIS</span>
-            <span class="payment-opt-sub">Transfer / Scan QRIS Basecamp</span>
+        </div>
+
+        <span class="payment-choice-title">🚚 Metode Pengiriman</span>
+        <div class="payment-options-grid">
+          <label class="payment-radio-card ${paymentSelection.kshopDelivery === 'pickup' ? 'selected' : ''}" onclick="selectKShopDelivery('pickup')">
+            <input type="radio" name="kshopDelivOption" value="pickup" ${paymentSelection.kshopDelivery === 'pickup' ? 'checked' : ''}>
+            <span class="payment-opt-name" style="color: var(--green-success);">Self Pickup</span>
+            <span class="payment-opt-sub">Ambil sendiri di Basecamp</span>
+          </label>
+          <label class="payment-radio-card ${paymentSelection.kshopDelivery === 'courier' ? 'selected' : ''}" onclick="selectKShopDelivery('courier')">
+            <input type="radio" name="kshopDelivOption" value="courier" ${paymentSelection.kshopDelivery === 'courier' ? 'checked' : ''}>
+            <span class="payment-opt-name" style="color: var(--green-success);">Via Kurir</span>
+            <span class="payment-opt-sub">Kirim ke alamat penerima</span>
           </label>
         </div>
       `;
@@ -1812,8 +1846,10 @@ function updateCartUI() {
     if (dpRow) dpRow.style.display = 'none';
     if (balanceRow) {
       balanceRow.style.display = 'flex';
-      balanceRow.querySelector('span:first-child').innerText = 'Metode Pembayaran:';
-      balanceRow.querySelector('span:last-child').innerText = paymentSelection.kshopMethod === 'cod' ? 'Tunai di Basecamp (COD)' : 'Transfer / QRIS Basecamp';
+      balanceRow.querySelector('span:first-child').innerText = 'Pengiriman & Pembayaran:';
+      const delivText = paymentSelection.kshopDelivery === 'courier' ? 'Via Kurir' : 'Self Pickup';
+      const payText = paymentSelection.kshopMethod === 'cod' ? 'Tunai di Basecamp' : 'Transfer / QRIS';
+      balanceRow.querySelector('span:last-child').innerText = `${delivText} (${payText})`;
     }
 
     if (subtotalRow) subtotalRow.innerText = 'Total Produk';
@@ -1962,14 +1998,33 @@ function openCheckoutModal() {
   }
   validateCODDateRule();
 
-  // Dynamically update Checkout Modal Destination label based on Category
-  const destLabel = document.getElementById('checkoutDestinationLabel');
-  if (destLabel) {
-    if (activeCartTab === 'rental') {
-      destLabel.innerHTML = `⛰️ Gunung / Destinasi Tujuan *`;
+  const destWrapper = document.getElementById('custDestinationWrapper');
+  const addrWrapper = document.getElementById('custAddressWrapper');
+  const destInput = document.getElementById('custDestinationInput');
+  const addrInput = document.getElementById('custAddressInput');
+
+  if (activeCartTab === 'rental') {
+    if (destWrapper) destWrapper.style.display = 'block';
+    if (destInput) destInput.required = true;
+    if (addrWrapper) addrWrapper.style.display = 'none';
+    if (addrInput) addrInput.required = false;
+  } else if (activeCartTab === 'sale') {
+    if (destWrapper) destWrapper.style.display = 'none';
+    if (destInput) destInput.required = false;
+
+    if (paymentSelection.kshopDelivery === 'courier') {
+      if (addrWrapper) addrWrapper.style.display = 'block';
+      if (addrInput) addrInput.required = true;
     } else {
-      destLabel.innerHTML = `⛰️ Destinasi / Penggunaan Alat *`;
+      if (addrWrapper) addrWrapper.style.display = 'none';
+      if (addrInput) addrInput.required = false;
     }
+  } else {
+    // Laundry
+    if (destWrapper) destWrapper.style.display = 'none';
+    if (destInput) destInput.required = false;
+    if (addrWrapper) addrWrapper.style.display = 'none';
+    if (addrInput) addrInput.required = false;
   }
 
   document.getElementById('cartBackdrop').classList.remove('active');
@@ -1988,7 +2043,7 @@ function closeCheckoutModal() {
   document.getElementById('checkoutModal').classList.remove('active');
 }
 
-// Submit Order: Category-Aware Receipt Formatting with Mandatory Destination & Exact Template
+// Submit Order: Exact WhatsApp Receipt Formatting per User Specifications
 async function submitOrderAndOpenWhatsApp(event) {
   event.preventDefault();
 
@@ -2002,12 +2057,23 @@ async function submitOrderAndOpenWhatsApp(event) {
   const nameInput = document.getElementById('custNameInput').value.trim();
   const phoneInput = document.getElementById('custPhoneInput').value.trim();
   const destinationInput = document.getElementById('custDestinationInput') ? document.getElementById('custDestinationInput').value.trim() : '';
+  const addressInput = document.getElementById('custAddressInput') ? document.getElementById('custAddressInput').value.trim() : '';
   const notesInput = document.getElementById('custNotesInput') ? document.getElementById('custNotesInput').value.trim() : '';
   const customerEmail = currentCustomer ? currentCustomer.email : '';
 
-  if (!nameInput || !phoneInput || !destinationInput) {
-    const msg = currentLang === 'id' ? 'Silakan isi Nama, Nomor WhatsApp, dan Destinasi Tujuan.' : 'Please provide your Name, WhatsApp number, and Destination.';
+  if (!nameInput || !phoneInput) {
+    const msg = currentLang === 'id' ? 'Silakan isi Nama dan Nomor WhatsApp Anda.' : 'Please provide your Name and WhatsApp number.';
     showToast(msg, 'warning');
+    return;
+  }
+
+  if (activeCartTab === 'rental' && !destinationInput) {
+    showToast('Silakan isi Destinasi Gunung Tujuan Anda.', 'warning');
+    return;
+  }
+
+  if (activeCartTab === 'sale' && paymentSelection.kshopDelivery === 'courier' && !addressInput) {
+    showToast('Silakan isi Alamat Lengkap Penerima untuk Pengiriman Kurir.', 'warning');
     return;
   }
 
@@ -2016,14 +2082,111 @@ async function submitOrderAndOpenWhatsApp(event) {
   const dpAmount = Math.round(grandTotal * (paymentSelection.dpPercent / 100));
   const balanceAmount = paymentSelection.method === 'dp' ? (grandTotal - dpAmount) : grandTotal;
 
-  // Real-Time Database-Aware Order ID Format: #CD-(YYMMDD)-(001)-7
-  const orderId = await fetchNextDailyOrderCode('CD');
+  // Exact Receipts and Order ID Prefixes
+  let waText = '';
 
-  // 1. Silent Booking Log in Supabase with PENDING Status
+  if (activeCartTab === 'laundry') {
+    // Prefix #SW-
+    const orderId = await fetchNextDailyOrderCode('SW');
+
+    let laundryPayStr = 'Cash On Drop-off';
+    if (paymentSelection.laundryMethod === 'transfer') laundryPayStr = 'Transfer';
+    if (paymentSelection.laundryMethod === 'qris') laundryPayStr = 'QRIS';
+
+    const sampleLaundry = activeTabItems.find(i => i.dropOffDate);
+    const dropStr = sampleLaundry ? sampleLaundry.dropOffDate : formatReceiptDate(formatDateInput(new Date()));
+    const pickStr = sampleLaundry ? sampleLaundry.pickUpDate : formatReceiptDate(getCalculatedLaundryPickUpDate(formatDateInput(new Date())));
+
+    waText += `🧼 Kamerad Equipment Care\n`;
+    waText += `—————————\n\n`;
+    waText += `📋 *Order ID* : #${orderId}\n`;
+    waText += `👤 *Pemesan* : ${nameInput}\n`;
+    waText += `📱 *WhatsApp* : ${phoneInput}\n\n`;
+    waText += `🧺 *Services* : \n`;
+    activeTabItems.forEach(item => {
+      const displayName = item.name_id || item.name;
+      const itemTotal = getItemTotalCost(item, durationDays);
+      waText += `• ${displayName} x${item.qty} (${formatRupiah(itemTotal)})\n`;
+    });
+    waText += `\n📅 *Drop Off* : ${dropStr}\n`;
+    waText += `📅 *Pick Up* : ${pickStr}\n\n`;
+    waText += `💰 *Total Biaya* : ${formatRupiah(grandTotal)}\n`;
+    waText += `💳 *Metode Transaksi* : ${laundryPayStr}\n`;
+    waText += `📌 *Catatan* : ${notesInput || '-'}\n\n`;
+    waText += `—————————\n`;
+    waText += `Kamerad Web App`;
+
+  } else if (activeCartTab === 'rental') {
+    // Prefix #CD-
+    const orderId = await fetchNextDailyOrderCode('CD');
+    const startFormatted = formatReceiptDate(rentalDates.startDate);
+    const endFormatted = formatReceiptDate(rentalDates.endDate);
+
+    const rentalDpMethodLabel = paymentSelection.rentalDpMethod || 'Transfer BCA';
+    const payMethodLabel = paymentSelection.method === 'dp' 
+      ? `Down Payment (50%) - ${rentalDpMethodLabel}` 
+      : 'Full COD / Tunai di Basecamp';
+
+    waText += `🏕️ *Rental Booking- Kamerad Basecamp*\n`;
+    waText += `—————————\n\n`;
+    waText += `📋 *Order ID:* #${orderId}\n`;
+    waText += `👤 *Penyewa :* ${nameInput}\n`;
+    waText += `📱 *WhatsApp :* ${phoneInput}\n`;
+    waText += `⛰️ *Destinasi :* ${destinationInput}\n`;
+    waText += `📅 *Tanggal Sewa :* ${startFormatted} ➔ ${endFormatted} (${durationDays} Hari)\n\n`;
+    waText += `🎒 *Item :* \n`;
+    activeTabItems.forEach(item => {
+      const displayName = item.name_id || item.name;
+      const itemTotal = getItemTotalCost(item, durationDays);
+      waText += `• ${displayName} x${item.qty} (${formatRupiah(itemTotal)})\n`;
+    });
+    waText += `\n💳 *Pembayaran Booking :* ${payMethodLabel}\n`;
+    waText += `💰 *Total Biaya Sewa :* ${formatRupiah(grandTotal)}\n`;
+    if (paymentSelection.method === 'dp') {
+      waText += `💸 *Down Payment ${paymentSelection.dpPercent}% :* ${formatRupiah(dpAmount)}\n`;
+      waText += `💸 *Sisa Bayar saat Pengambilan :* ${formatRupiah(balanceAmount)}\n`;
+    }
+    waText += `📌 *Catatan:* ${notesInput || `Pengambilan barang di Basecamp pada tanggal ${rentalDates.startDate}`}\n\n`;
+    waText += `—————————\n`;
+    waText += `Kamerad Web App`;
+
+  } else if (activeCartTab === 'sale') {
+    // Prefix #SS-
+    const orderId = await fetchNextDailyOrderCode('SS');
+    const todayFormatted = formatReceiptDate(formatDateInput(new Date()));
+
+    const kshopPayStr = paymentSelection.kshopMethod === 'cod' ? 'Tunai di Basecamp' : 'Transfer / QRIS';
+    const deliveryStr = paymentSelection.kshopDelivery === 'courier' ? 'Via Kurir' : 'Self Pickup';
+
+    waText += `🏷️ *K-Shop*\n`;
+    waText += `—————————\n\n`;
+    waText += `📋 *Order ID:* #${orderId}\n`;
+    waText += `👤 *Buyer:* ${nameInput}\n`;
+    waText += `📱 *WhatsApp:* ${phoneInput}\n`;
+    waText += `📅 *Purchase Date:* ${todayFormatted}\n\n`;
+    waText += `🛒 *Items:* \n`;
+    activeTabItems.forEach(item => {
+      const displayName = item.name_id || item.name;
+      const itemTotal = getItemTotalCost(item, durationDays);
+      waText += `• ${displayName} x${item.qty} (${formatRupiah(itemTotal)})\n`;
+    });
+    waText += `\n💰 *Total Pembelian:* ${formatRupiah(grandTotal)}\n`;
+    waText += `💳 *Metode Transaksi:* ${kshopPayStr}\n`;
+    waText += `🚚 *Metode Pengiriman:* ${deliveryStr}\n`;
+    if (paymentSelection.kshopDelivery === 'courier') {
+      waText += `📍 *Alamat Penerima:* ${addressInput}\n`;
+    }
+    waText += `📌 *Catatan:* ${notesInput || '-'}\n\n`;
+    waText += `—————————\n`;
+    waText += `Kamerad Web App`;
+  }
+
+  // 1. Silent Booking Log in Supabase
+  const finalOrderId = waText.match(/Order ID[^\n]*#([A-Z0-9-]+)/)?.[1] || 'CD-ORDER';
   if (supabaseClient) {
     try {
       const { data, error } = await supabaseClient.rpc('process_rental_booking', {
-        p_order_code: orderId,
+        p_order_code: finalOrderId,
         p_customer_name: nameInput,
         p_customer_phone: phoneInput,
         p_customer_email: customerEmail,
@@ -2034,7 +2197,7 @@ async function submitOrderAndOpenWhatsApp(event) {
         p_grand_total: grandTotal,
         p_dp_amount: dpAmount,
         p_balance_amount: balanceAmount,
-        p_notes: `Destinasi: ${destinationInput} | ${notesInput}`,
+        p_notes: `Destinasi: ${destinationInput} | Alamat: ${addressInput} | ${notesInput}`,
         p_items: activeTabItems.map(c => ({ id: c.id, name: c.name, qty: c.qty, itemType: c.itemType || 'rental', itemTotal: getItemTotalCost(c, durationDays), image: c.image }))
       });
 
@@ -2046,7 +2209,7 @@ async function submitOrderAndOpenWhatsApp(event) {
 
   // Backup in Local Storage
   localBookings.unshift({
-    orderId,
+    orderId: finalOrderId,
     customerName: nameInput,
     phone: phoneInput,
     customerEmail,
@@ -2063,102 +2226,6 @@ async function submitOrderAndOpenWhatsApp(event) {
   });
   localStorage.setItem('kmrd_local_bookings', JSON.stringify(localBookings));
 
-  // 2. Exact WhatsApp Receipt Formatting per User Specifications
-  let waText = '';
-  if (activeCartTab === 'rental') {
-    const startFormatted = formatReceiptDate(rentalDates.startDate);
-    const endFormatted = formatReceiptDate(rentalDates.endDate);
-
-    waText += `🏕️ RENTAL - KAMERAD BASECAMP\n`;
-    waText += `----------------------------------------\n`;
-    waText += `📋 Order ID: #${orderId}\n`;
-    waText += `👤 Penyewa: ${nameInput}\n`;
-    waText += `📱 WhatsApp: ${phoneInput}\n`;
-    waText += `⛰️ Destinasi: ${destinationInput}\n`;
-    waText += `📅 Tanggal Sewa: ${startFormatted} ➔ ${endFormatted} (${durationDays} Hari)\n\n`;
-    waText += `🎒 DAFTAR ITEM SEWA: \n`;
-    activeTabItems.forEach(item => {
-      const displayName = item.name_id || item.name;
-      const itemTotal = getItemTotalCost(item, durationDays);
-      waText += `• ${displayName} x${item.qty} (${formatRupiah(itemTotal)})\n`;
-    });
-    waText += `\n💳 METODE PEMBAYARAN: ${paymentSelection.method === 'dp' ? `Down Payment (${paymentSelection.dpPercent}%)` : 'Full COD / Tunai di Basecamp'}\n`;
-    waText += `💰 Total Biaya Sewa: ${formatRupiah(grandTotal)}\n`;
-    if (paymentSelection.method === 'dp') {
-      waText += `💸 Down Payment ${paymentSelection.dpPercent}%: ${formatRupiah(dpAmount)}\n`;
-      waText += `💸 Sisa Bayar saat Pengambilan: ${formatRupiah(balanceAmount)}\n`;
-    }
-    waText += `📌 Catatan: Pengambilan barang di Basecamp pada tanggal ${rentalDates.startDate}\n`;
-    if (notesInput) {
-      waText += `📝 Catatan Tambahan: ${notesInput}\n`;
-    }
-    waText += `----------------------------------------\n`;
-    waText += `Kamerad web-app order`;
-
-  } else if (activeCartTab === 'laundry') {
-    const laundryPayStr = paymentSelection.laundryMethod === 'dropoff' 
-      ? 'Bayar saat Drop-off Alat di Basecamp' 
-      : 'Bayar saat Ambil Selesai (Pick-up)';
-
-    const sampleLaundry = activeTabItems.find(i => i.dropOffDate);
-    const dropStr = sampleLaundry ? sampleLaundry.dropOffDate : formatDateInput(new Date());
-    const pickStr = sampleLaundry ? sampleLaundry.pickUpDate : getCalculatedLaundryPickUpDate(dropStr);
-
-    const dropFormatted = formatReceiptDate(dropStr);
-    const pickFormatted = formatReceiptDate(pickStr);
-
-    waText += `🧼 LAUNDRY & CARE - KAMERAD BASECAMP\n`;
-    waText += `----------------------------------------\n`;
-    waText += `📋 Order ID: #${orderId}\n`;
-    waText += `👤 Pemesan: ${nameInput}\n`;
-    waText += `📱 WhatsApp: ${phoneInput}\n`;
-    waText += `⛰️ Destinasi / Penggunaan: ${destinationInput}\n`;
-    waText += `📅 Jadwal Laundry: ${dropFormatted} ➔ ${pickFormatted} (Standard 3 Hari)\n\n`;
-    waText += `🧺 DAFTAR LAYANAN LAUNDRY: \n`;
-    activeTabItems.forEach(item => {
-      const displayName = item.name_id || item.name;
-      const itemTotal = getItemTotalCost(item, durationDays);
-      waText += `• ${displayName} x${item.qty} (${formatRupiah(itemTotal)})\n`;
-    });
-    waText += `\n💳 METODE PEMBAYARAN: ${laundryPayStr}\n`;
-    waText += `💰 Total Biaya Laundry: ${formatRupiah(grandTotal)}\n`;
-    waText += `📌 Catatan: Penyerahan alat ke Basecamp pada tanggal ${dropStr}\n`;
-    if (notesInput) {
-      waText += `📝 Catatan Tambahan: ${notesInput}\n`;
-    }
-    waText += `----------------------------------------\n`;
-    waText += `Kamerad web-app order`;
-
-  } else if (activeCartTab === 'sale') {
-    const kshopPayStr = paymentSelection.kshopMethod === 'cod' 
-      ? 'Tunai di Basecamp (COD)' 
-      : 'Transfer / Scan QRIS Basecamp';
-
-    const todayFormatted = formatReceiptDate(formatDateInput(new Date()));
-
-    waText += `🏷️ K-SHOP - KAMERAD BASECAMP\n`;
-    waText += `----------------------------------------\n`;
-    waText += `📋 Order ID: #${orderId}\n`;
-    waText += `👤 Pembeli: ${nameInput}\n`;
-    waText += `📱 WhatsApp: ${phoneInput}\n`;
-    waText += `⛰️ Destinasi / Penggunaan: ${destinationInput}\n`;
-    waText += `📅 Tanggal Pemesanan: ${todayFormatted}\n\n`;
-    waText += `🛒 DAFTAR PRODUK K-SHOP: \n`;
-    activeTabItems.forEach(item => {
-      const displayName = item.name_id || item.name;
-      const itemTotal = getItemTotalCost(item, durationDays);
-      waText += `• ${displayName} x${item.qty} (${formatRupiah(itemTotal)})\n`;
-    });
-    waText += `\n💳 METODE PEMBAYARAN: ${kshopPayStr}\n`;
-    waText += `💰 Total Pembelian: ${formatRupiah(grandTotal)}\n`;
-    waText += `📌 Catatan: Pengambilan / Konfirmasi di Basecamp\n`;
-    if (notesInput) {
-      waText += `📝 Catatan Tambahan: ${notesInput}\n`;
-    }
-    waText += `----------------------------------------\n`;
-    waText += `Kamerad web-app order`;
-  }
-
   closeCheckoutModal();
   showToast('Pesanan dikonfirmasi! Membuka WhatsApp Basecamp...', 'success');
 
@@ -2166,7 +2233,7 @@ async function submitOrderAndOpenWhatsApp(event) {
   cart = cart.filter(i => (i.itemType || 'rental') !== activeCartTab);
   updateCartUI();
 
-  // Instant iOS Safari & Android compatible WhatsApp redirect
+  // Instant Cross-Platform WhatsApp Redirect
   openWhatsAppURL(waText);
 }
 

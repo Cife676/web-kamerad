@@ -597,14 +597,19 @@
             <input type="tel" id="custPhoneInput" class="search-input" style="padding-left: 1rem;" placeholder="e.g. 082299318955" required>
           </div>
 
-          <div class="input-field-wrapper">
+          <div class="input-field-wrapper" id="custDestinationWrapper">
             <label for="custDestinationInput" id="checkoutDestinationLabel">⛰️ Gunung / Destinasi Tujuan *</label>
-            <input type="text" id="custDestinationInput" class="search-input" style="padding-left: 1rem;" placeholder="e.g. Gunung Gede via Cibodas / Rinjani" required>
+            <input type="text" id="custDestinationInput" class="search-input" style="padding-left: 1rem;" placeholder="e.g. Gunung Gede via Cibodas / Rinjani">
+          </div>
+
+          <div class="input-field-wrapper" id="custAddressWrapper" style="display: none;">
+            <label for="custAddressInput">📍 Alamat Lengkap Penerima (Khusus Via Kurir) *</label>
+            <textarea id="custAddressInput" class="search-input" style="padding-left: 1rem; min-height: 60px; font-family: var(--font-body);" placeholder="e.g. Jl. Merdeka No. 12, Kel. Menteng, Jakarta Pusat (Kode Pos 10110)"></textarea>
           </div>
 
           <div class="input-field-wrapper">
-            <label for="custNotesInput">📝 Catatan Tambahan (Opsional)</label>
-            <textarea id="custNotesInput" class="search-input" style="padding-left: 1rem; min-height: 60px; font-family: var(--font-body);" placeholder="e.g. Request jam pengambilan 08:00 WIB"></textarea>
+            <label for="custNotesInput">📌 Catatan Tambahan (Opsional)</label>
+            <textarea id="custNotesInput" class="search-input" style="padding-left: 1rem; min-height: 60px; font-family: var(--font-body);" placeholder="e.g. Request jam pengambilan 08:00 WIB / Catatan khusus"></textarea>
           </div>
         </div>
 
