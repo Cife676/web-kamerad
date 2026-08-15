@@ -1205,6 +1205,8 @@ function openEmailVerificationNoticeModal(targetEmail) {
 function closeEmailVerificationModal() {
   const modal = document.getElementById('emailVerificationModal');
   if (modal) modal.classList.remove('active');
+  const authModal = document.getElementById('customerAuthModal');
+  if (authModal) authModal.classList.remove('active');
 }
 
 // Process Email Verification: UNCONFIRMED -> CONFIRMED
@@ -2113,6 +2115,23 @@ function setupEventListeners() {
 
   if (cartBtn) cartBtn.addEventListener('click', () => cartBackdrop.classList.add('active'));
   if (closeCartBtn) closeCartBtn.addEventListener('click', () => cartBackdrop.classList.remove('active'));
+
+  // Close any active modal backdrop when clicking outside the modal content card
+  document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+    backdrop.addEventListener('click', (e) => {
+      if (e.target === backdrop) {
+        backdrop.classList.remove('active');
+      }
+    });
+  });
+
+  if (cartBackdrop) {
+    cartBackdrop.addEventListener('click', (e) => {
+      if (e.target === cartBackdrop) {
+        cartBackdrop.classList.remove('active');
+      }
+    });
+  }
 }
 
 // Quick View Modal
