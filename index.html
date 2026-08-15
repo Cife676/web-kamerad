@@ -732,6 +732,48 @@
     </div>
   </div>
 
+  <!-- Email Verification Notice & Link Simulator Modal -->
+  <div class="modal-backdrop" id="emailVerificationModal">
+    <div class="modal-card" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3 style="font-size: 1.15rem; color: var(--amber-warning); display: flex; align-items: center; gap: 0.5rem;">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+          Verifikasi Email Diperlukan
+        </h3>
+        <button class="btn-close" onclick="closeEmailVerificationModal()">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div style="text-align: center; padding: 0.5rem 0;">
+          <div style="width: 56px; height: 56px; background: rgba(245, 158, 11, 0.15); border: 1px solid var(--amber-warning); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.85rem auto;">
+            <svg width="28" height="28" fill="none" stroke="var(--amber-warning)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+          </div>
+          <h4 style="font-size: 1.1rem; color: #fff; margin-bottom: 0.35rem;">Link Verifikasi Dikirimkan!</h4>
+          <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5;">
+            Status akun Anda di database saat ini: <strong style="color: var(--amber-warning);">UNCONFIRMED</strong>.<br>
+            Silakan periksa inbox email <strong style="color: #6ee7b7;" id="verificationTargetEmail">user@example.com</strong> dan klik link konfirmasi untuk mengubah status menjadi <strong style="color: var(--green-success);">CONFIRMED</strong>.
+          </p>
+        </div>
+
+        <!-- Verification Action Simulation Box -->
+        <div style="background: rgba(16, 185, 129, 0.1); border: 1px dashed rgba(16, 185, 129, 0.3); padding: 1rem; border-radius: var(--radius-md); margin-top: 0.75rem;">
+          <div style="font-size: 0.8rem; color: #6ee7b7; font-weight: 700; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.35rem;">
+            <span>🔗 Simulated Email Verification Link:</span>
+          </div>
+          <button type="button" class="btn-primary" id="btnSimulateEmailClick" style="width: 100%; background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+            📩 Klik di sini untuk Konfirmasi Verifikasi Email Now
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="closeEmailVerificationModal()">Nanti Saja</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Customer Bookings History Modal -->
   <div class="modal-backdrop" id="customerBookingsModal">
     <div class="modal-card" style="max-width: 800px;">

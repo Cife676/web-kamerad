@@ -524,6 +524,7 @@ document.addEventListener('DOMContentLoaded', () => {
   updateCartUI();
   setupEventListeners();
   checkSecretAdminURL();
+  checkEmailVerificationURL();
 });
 
 // ON-DEMAND SECTION SWITCHER
@@ -1184,7 +1185,77 @@ function switchAuthTab(tab) {
 // Local Registered Accounts Storage Backup
 let localUsers = JSON.parse(localStorage.getItem('kmrd_registered_users') || '[]');
 
-// Handle Customer Register & Save to Database with Username & Password
+// Email Verification Modal Controls
+function openEmailVerificationNoticeModal(targetEmail) {
+  const modal = document.getElementById('emailVerificationModal');
+  const targetEmailEl = document.getElementById('verificationTargetEmail');
+  const simBtn = document.getElementById('btnSimulateEmailClick');
+
+  if (targetEmailEl) targetEmailEl.innerText = targetEmail;
+
+  if (simBtn) {
+    simBtn.onclick = async () => {
+      await processEmailVerification(targetEmail);
+    };
+  }
+
+  if (modal) modal.classList.add('active');
+}
+
+function closeEmailVerificationModal() {
+  const modal = document.getElementById('emailVerificationModal');
+  if (modal) modal.classList.remove('active');
+}
+
+// Process Email Verification: UNCONFIRMED -> CONFIRMED
+async function processEmailVerification(email) {
+  if (!email) return;
+
+  // 1. Update in Supabase Database
+  if (supabaseClient) {
+    try {
+      await supabaseClient
+        .from('customers')
+        .update({ status: 'CONFIRMED' })
+        .eq('email', email.toLowerCase());
+    } catch (err) {
+      console.error('Supabase customer verification error:', err);
+    }
+  }
+
+  // 2. Update in Local Storage
+  const userInLocal = localUsers.find(u => u.email === email.toLowerCase());
+  if (userInLocal) {
+    userInLocal.status = 'CONFIRMED';
+    localStorage.setItem('kmrd_registered_users', JSON.stringify(localUsers));
+  }
+
+  closeEmailVerificationModal();
+  openAuthModal('login');
+
+  const loginInput = document.getElementById('loginEmailInput');
+  if (loginInput) loginInput.value = email;
+
+  showToast(`✅ Email Berhasil Terverifikasi! Status akun Anda di database sekarang CONFIRMED. Silakan Login.`, 'success');
+}
+
+// Hash Listener for #verify-email?email=...
+async function checkEmailVerificationURL() {
+  const hash = window.location.hash || '';
+  if (hash.includes('verify-email')) {
+    const queryString = hash.split('?')[1] || '';
+    const urlParams = new URLSearchParams(queryString);
+    const email = urlParams.get('email');
+    if (email) {
+      await processEmailVerification(email);
+      window.history.replaceState(null, null, window.location.pathname);
+    }
+  }
+}
+
+window.addEventListener('hashchange', checkEmailVerificationURL);
+
+// Handle Customer Register with UNCONFIRMED status
 async function handleCustomerRegister(event) {
   event.preventDefault();
   const username = document.getElementById('regUsernameInput') ? document.getElementById('regUsernameInput').value.trim().toLowerCase() : '';
@@ -1229,14 +1300,22 @@ async function handleCustomerRegister(event) {
     }
   }
 
-  // Create User Account Object
-  const newUserRecord = { username, name, phone, email, password, created_at: new Date().toISOString() };
+  // Create User Account Record with status UNCONFIRMED
+  const newUserRecord = {
+    username,
+    name,
+    phone,
+    email,
+    password,
+    status: 'UNCONFIRMED',
+    created_at: new Date().toISOString()
+  };
 
   // 1. Save to Local Storage
   localUsers.push(newUserRecord);
   localStorage.setItem('kmrd_registered_users', JSON.stringify(localUsers));
 
-  // 2. Save Customer Profile & Password securely to Supabase Database
+  // 2. Save Customer Profile to Supabase Database (Status: UNCONFIRMED)
   if (supabaseClient) {
     try {
       await supabaseClient.from('customers').upsert([newUserRecord], { onConflict: 'email' });
@@ -1245,26 +1324,13 @@ async function handleCustomerRegister(event) {
     }
   }
 
-  currentCustomer = { username, name, phone, email };
-  localStorage.setItem('kmrd_customer_session', JSON.stringify(currentCustomer));
-
   closeAuthModal();
-  renderNavAuthButtons();
+  openEmailVerificationNoticeModal(email);
 
-  const custNameInput = document.getElementById('custNameInput');
-  const custPhoneInput = document.getElementById('custPhoneInput');
-  if (custNameInput) custNameInput.value = name;
-  if (custPhoneInput) custPhoneInput.value = phone;
-
-  showToast(`🎉 Registrasi berhasil! Akun tersimpan aman di database.`, 'success');
-
-  // Auto proceed to checkout if user has items in cart
-  if (cart.length > 0) {
-    openCheckoutModal();
-  }
+  showToast(`📩 Link verifikasi dikirim ke ${email}. Status akun: UNCONFIRMED`, 'info');
 }
 
-// Handle Customer Login (Strict Credentials & Password Verification)
+// Handle Customer Login (Requires Status CONFIRMED)
 async function handleCustomerLogin(event) {
   event.preventDefault();
   const inputIdentifier = document.getElementById('loginEmailInput').value.trim().toLowerCase();
@@ -1302,6 +1368,14 @@ async function handleCustomerLogin(event) {
   // STRICT CREDENTIAL VERIFICATION: Reject if unregistered or wrong password
   if (!foundUser) {
     showToast('❌ Login Gagal! Email/Username atau Password salah. Silakan periksa atau Daftar Akun baru.', 'warning');
+    return;
+  }
+
+  // VERIFICATION GUARD: Reject Login if Status is UNCONFIRMED!
+  const isConfirmed = (foundUser.status === 'CONFIRMED' || foundUser.status === 'CONFIRMED_USER' || foundUser.status === 'ACTIVE');
+  if (!isConfirmed) {
+    showToast('⚠️ Akun Anda belum terverifikasi! Status di database: UNCONFIRMED. Silakan konfirmasi email Anda terlebih dahulu.', 'warning');
+    openEmailVerificationNoticeModal(foundUser.email);
     return;
   }
 
