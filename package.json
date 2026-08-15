@@ -1,0 +1,17 @@
+{
+  "name": "web-kamerad",
+  "version": "1.0.0",
+  "description": "KAMERAD basecamp edition Web Application",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "kamerad",
+    "outdoor",
+    "rental"
+  ],
+  "author": "KAMERAD Basecamp",
+  "license": "ISC"
+}
