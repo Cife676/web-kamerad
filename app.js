@@ -680,8 +680,12 @@ function getItemTotalCost(item, durationDays) {
 
 // Automatic & Silent Supabase Connection Setup
 function initSupabaseClient() {
-  const sbUrl = SUPABASE_URL || localStorage.getItem('kmrd_sb_url');
-  const sbKey = SUPABASE_ANON_KEY || localStorage.getItem('kmrd_sb_key');
+  let sbUrl = SUPABASE_URL || localStorage.getItem('kmrd_sb_url');
+  let sbKey = SUPABASE_ANON_KEY || localStorage.getItem('kmrd_sb_key');
+
+  if (sbUrl) {
+    sbUrl = sbUrl.replace(/\/rest\/v1\/?$/, '').replace(/\/$/, '');
+  }
 
   if (sbUrl && sbKey && window.supabase) {
     try {
