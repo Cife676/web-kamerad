@@ -1240,9 +1240,6 @@ function closeEmailVerificationModal() {
 async function handleCustomerRegister(event) {
   if (event && event.preventDefault) event.preventDefault();
 
-  showToast('📢 REGISTER FUNCTION STARTED', 'info');
-  console.log('REGISTER FUNCTION STARTED');
-
   const usernameInput = document.getElementById('regUsernameInput');
   const nameInput = document.getElementById('regNameInput');
   const phoneInput = document.getElementById('regPhoneInput');
@@ -1256,29 +1253,24 @@ async function handleCustomerRegister(event) {
   const password = passwordInput ? passwordInput.value : '';
 
   if (!username || !name || !phone || !email || !password) {
-    showToast('⚠️ Silakan lengkapi Username, Nama, WhatsApp, Email, dan Password.', 'warning');
+    showToast('Silakan lengkapi Username, Nama, WhatsApp, Email, dan Password.', 'warning');
     return;
   }
 
   if (password.length < 6) {
-    showToast('⚠️ Password minimal harus 6 karakter!', 'warning');
+    showToast('Password minimal harus 6 karakter!', 'warning');
     return;
   }
 
   if (!supabaseClient || !supabaseClient.auth) {
-    const uninitErr = '❌ Supabase Auth Client tidak terhubung. Silakan periksa koneksi.';
-    console.error(uninitErr);
-    showToast(uninitErr, 'warning');
+    showToast('❌ Supabase Auth Client tidak terhubung. Silakan periksa koneksi.', 'warning');
     return;
   }
 
   try {
     const redirectUrl = 'http://localhost:8080/';
 
-    showToast('📡 CONTACTING SUPABASE AUTH...', 'info');
-    console.log('CONTACTING SUPABASE AUTH...');
-
-    // 1. Call supabaseClient.auth.signUp() and store exact result
+    // 1. Call supabaseClient.auth.signUp()
     const { data, error: signUpError } = await supabaseClient.auth.signUp({
       email: email,
       password: password,
@@ -1292,34 +1284,30 @@ async function handleCustomerRegister(event) {
       }
     });
 
-    // 3. Handle SignUp Error
     if (signUpError) {
       const errCode = signUpError.code || signUpError.error_code || 'N/A';
-      const errStatus = signUpError.status || 'N/A';
       let errMessage = signUpError.message || 'Unknown Supabase Auth Error';
 
       if (errCode === 'over_email_send_rate_limit' || errMessage.includes('rate limit')) {
-        errMessage = 'Email rate limit exceeded (Batas pengiriman email Supabase tercapai). Silakan nonaktifkan "Confirm email" di Dashboard Supabase Auth ➔ Providers ➔ Email untuk testing gratis tanpa batas!';
+        errMessage = 'Batas pengiriman email Supabase tercapai (Rate Limit). Silakan nonaktifkan "Confirm email" di Dashboard Supabase Auth ➔ Providers ➔ Email untuk testing gratis tanpa batas!';
+      } else if (errMessage.includes('already registered') || errMessage.includes('User already registered')) {
+        errMessage = 'Email ini sudah terdaftar! Silakan Login.';
       }
 
       console.error('SUPABASE AUTH SIGNUP ERROR:', signUpError);
-      showToast(`❌ SUPABASE AUTH ERROR [${errCode}] (Status: ${errStatus}): ${errMessage}`, 'warning');
+      showToast(`❌ Registrasi Gagal: ${errMessage}`, 'warning');
       return;
     }
 
-    // 8. Handle Case where data.user is null
     if (!data || !data.user) {
       console.error('AUTH DID NOT RETURN A USER:', data);
-      showToast(`❌ AUTH DID NOT RETURN A USER: ${JSON.stringify(data)}`, 'warning');
+      showToast('❌ Registrasi Gagal: User ID tidak ditemukan dari Supabase Auth.', 'warning');
       return;
     }
 
-    // 4. Display AUTH USER CREATED
     const authUserId = data.user.id;
-    console.log('AUTH USER CREATED:', authUserId);
-    showToast(`✅ AUTH USER CREATED: ${authUserId}`, 'info');
 
-    // 5. Perform the customers INSERT (No Password)
+    // 2. Perform the customers INSERT (No Password)
     const profile = {
       username: username,
       name: name,
@@ -1333,24 +1321,20 @@ async function handleCustomerRegister(event) {
       .from('customers')
       .insert(profile);
 
-    // 7. Handle Customers Insert Error
     if (profileError) {
-      const errMsg = profileError.message || 'N/A';
-      const errCode = profileError.code || 'N/A';
-      const errDetails = profileError.details || 'N/A';
-      const errHint = profileError.hint || 'N/A';
-
-      const fullErrStr = `CUSTOMERS INSERT FAILED | Message: ${errMsg} | Code: ${errCode} | Details: ${errDetails} | Hint: ${errHint}`;
       console.error('CUSTOMERS INSERT FAILED:', profileError);
-      showToast(`❌ ${fullErrStr}`, 'warning');
+      let dbMsg = profileError.message || 'Gagal menyimpan profil';
+      if (dbMsg.includes('duplicate key') || dbMsg.includes('already exists')) {
+        dbMsg = 'Username atau Email sudah terdaftar!';
+      }
+      showToast(`❌ Registrasi Gagal: ${dbMsg}`, 'warning');
       return;
     }
 
-    // 2 & 6. SUCCESS ONLY WHEN BOTH AUTH SIGNUP AND CUSTOMERS INSERT SUCCEEDED
-    console.log('REGISTRATION SUCCESSFUL FOR:', email);
+    // 3. SUCCESS: Close modal, open notice modal, and show custom requested toast phrasing
     closeAuthModal();
     openEmailVerificationNoticeModal(email);
-    showToast(`📩 Link verifikasi dikirim oleh Supabase ke ${email}`, 'success');
+    showToast('Basecamp udah kirim link buat verifikasi nih ke email yang Kamerad pakai buat daftar, verif dulu ya tar balik ke menu login abis verif', 'info');
 
   } catch (err) {
     console.error('Registration Exception:', err);
