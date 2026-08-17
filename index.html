@@ -724,6 +724,8 @@
           </div>
           <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); padding: 0.75rem; border-radius: var(--radius-sm); font-size: 0.8rem; color: #6ee7b7;">
             ✅ Akun Anda akan tersimpan aman di database. Gunakan Email/Username & Password ini untuk Login.
+          </div>
+        </div>
         <div class="modal-footer">
           <button type="button" class="btn-secondary" onclick="closeAuthModal()">Batal</button>
           <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">Daftar Akun Baru</button>
@@ -732,7 +734,7 @@
     </div>
   </div>
 
-  <!-- Email Verification Notice & Link Simulator Modal -->
+  <!-- Email Verification Notice Modal -->
   <div class="modal-backdrop" id="emailVerificationModal">
     <div class="modal-card" style="max-width: 500px;">
       <div class="modal-header">
@@ -750,26 +752,15 @@
           <div style="width: 56px; height: 56px; background: rgba(245, 158, 11, 0.15); border: 1px solid var(--amber-warning); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.85rem auto;">
             <svg width="28" height="28" fill="none" stroke="var(--amber-warning)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
           </div>
-          <h4 style="font-size: 1.1rem; color: #fff; margin-bottom: 0.35rem;">Link Verifikasi Dikirimkan!</h4>
+          <h4 style="font-size: 1.1rem; color: #fff; margin-bottom: 0.35rem;">Link Verifikasi Dikirimkan via Supabase!</h4>
           <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5;">
-            Status akun Anda di database saat ini: <strong style="color: var(--amber-warning);">UNCONFIRMED</strong>.<br>
-            Silakan periksa inbox email <strong style="color: #6ee7b7;" id="verificationTargetEmail">user@example.com</strong> dan klik link konfirmasi untuk mengubah status menjadi <strong style="color: var(--green-success);">CONFIRMED</strong>.
+            Silakan periksa inbox email <strong style="color: #6ee7b7;" id="verificationTargetEmail">user@example.com</strong> dan klik link konfirmasi resmi yang dikirimkan oleh Supabase Auth untuk mengaktifkan akun Anda.
           </p>
-        </div>
-
-        <!-- Verification Action Simulation Box -->
-        <div style="background: rgba(16, 185, 129, 0.1); border: 1px dashed rgba(16, 185, 129, 0.3); padding: 1rem; border-radius: var(--radius-md); margin-top: 0.75rem;">
-          <div style="font-size: 0.8rem; color: #6ee7b7; font-weight: 700; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.35rem;">
-            <span>🔗 Simulated Email Verification Link:</span>
-          </div>
-          <button type="button" class="btn-primary" id="btnSimulateEmailClick" style="width: 100%; background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
-            📩 Klik di sini untuk Konfirmasi Verifikasi Email Now
-          </button>
         </div>
       </div>
 
       <div class="modal-footer">
-        <button type="button" class="btn-secondary" onclick="closeEmailVerificationModal()">Nanti Saja</button>
+        <button type="button" class="btn-primary" onclick="closeEmailVerificationModal()">Mengerti</button>
       </div>
     </div>
   </div>

@@ -524,7 +524,6 @@ document.addEventListener('DOMContentLoaded', () => {
   updateCartUI();
   setupEventListeners();
   checkSecretAdminURL();
-  checkEmailVerificationURL();
 });
 
 // ON-DEMAND SECTION SWITCHER
@@ -691,10 +690,42 @@ function initSupabaseClient() {
     try {
       supabaseClient = window.supabase.createClient(sbUrl, sbKey);
       fetchItemsFromSupabase();
+      setupSupabaseAuthSessionListener();
     } catch (err) {
       console.error('Supabase connection error:', err);
     }
   }
+}
+
+// Official Supabase Auth Session Listener (onAuthStateChange)
+function setupSupabaseAuthSessionListener() {
+  if (!supabaseClient || !supabaseClient.auth) return;
+
+  supabaseClient.auth.onAuthStateChange((event, session) => {
+    console.log('Supabase Auth Event:', event, session);
+    if (session && session.user) {
+      const uMeta = session.user.user_metadata || {};
+      currentCustomer = {
+        id: session.user.id,
+        email: session.user.email,
+        name: uMeta.name || session.user.email.split('@')[0],
+        username: uMeta.username || session.user.email.split('@')[0],
+        phone: uMeta.phone || ''
+      };
+    } else {
+      currentCustomer = null;
+    }
+    renderNavAuthButtons();
+    updateCheckoutInputsWithSession();
+  });
+}
+
+function updateCheckoutInputsWithSession() {
+  if (!currentCustomer) return;
+  const custNameInput = document.getElementById('custNameInput');
+  const custPhoneInput = document.getElementById('custPhoneInput');
+  if (custNameInput) custNameInput.value = currentCustomer.name || '';
+  if (custPhoneInput && currentCustomer.phone) custPhoneInput.value = currentCustomer.phone;
 }
 
 // Fetch Real-Time Stock silently from Supabase `items` table
@@ -1189,20 +1220,12 @@ function switchAuthTab(tab) {
 // Local Registered Accounts Storage Backup
 let localUsers = JSON.parse(localStorage.getItem('kmrd_registered_users') || '[]');
 
-// Email Verification Modal Controls
+// Email Verification Notice Modal Controls
 function openEmailVerificationNoticeModal(targetEmail) {
   const modal = document.getElementById('emailVerificationModal');
   const targetEmailEl = document.getElementById('verificationTargetEmail');
-  const simBtn = document.getElementById('btnSimulateEmailClick');
 
   if (targetEmailEl) targetEmailEl.innerText = targetEmail;
-
-  if (simBtn) {
-    simBtn.onclick = async () => {
-      await processEmailVerification(targetEmail);
-    };
-  }
-
   if (modal) modal.classList.add('active');
 }
 
@@ -1213,144 +1236,129 @@ function closeEmailVerificationModal() {
   if (authModal) authModal.classList.remove('active');
 }
 
-// Process Email Verification: UNCONFIRMED -> CONFIRMED
-async function processEmailVerification(email) {
-  if (!email) return;
-
-  // 1. Update in Supabase Database
-  if (supabaseClient) {
-    try {
-      const { error } = await supabaseClient
-        .from('customers')
-        .update({ status: 'CONFIRMED' })
-        .eq('email', email.toLowerCase());
-
-      if (error) {
-        console.error('Supabase customer verification error:', error);
-      }
-    } catch (err) {
-      console.error('Supabase customer verification exception:', err);
-    }
-  }
-
-  // 2. Update in Local Storage
-  const userInLocal = localUsers.find(u => u.email === email.toLowerCase());
-  if (userInLocal) {
-    userInLocal.status = 'CONFIRMED';
-    localStorage.setItem('kmrd_registered_users', JSON.stringify(localUsers));
-  }
-
-  closeEmailVerificationModal();
-  openAuthModal('login');
-
-  const loginInput = document.getElementById('loginEmailInput');
-  if (loginInput) loginInput.value = email;
-
-  showToast(`✅ Email Berhasil Terverifikasi! Status akun Anda di database sekarang CONFIRMED. Silakan Login.`, 'success');
-}
-
-// Hash Listener for #verify-email?email=...
-async function checkEmailVerificationURL() {
-  const hash = window.location.hash || '';
-  if (hash.includes('verify-email')) {
-    const queryString = hash.split('?')[1] || '';
-    const urlParams = new URLSearchParams(queryString);
-    const email = urlParams.get('email');
-    if (email) {
-      await processEmailVerification(email);
-      window.history.replaceState(null, null, window.location.pathname);
-    }
-  }
-}
-
-window.addEventListener('hashchange', checkEmailVerificationURL);
-
-// Handle Customer Register with UNCONFIRMED status
+// Handle Customer Register with Supabase Auth & Profile Insertion
 async function handleCustomerRegister(event) {
-  event.preventDefault();
-  const username = document.getElementById('regUsernameInput') ? document.getElementById('regUsernameInput').value.trim().toLowerCase() : '';
-  const name = document.getElementById('regNameInput').value.trim();
-  const phone = document.getElementById('regPhoneInput').value.trim();
-  const email = document.getElementById('regEmailInput').value.trim().toLowerCase();
-  const password = document.getElementById('regPasswordInput').value;
+  if (event && event.preventDefault) event.preventDefault();
+
+  showToast('📢 REGISTER FUNCTION STARTED', 'info');
+  console.log('REGISTER FUNCTION STARTED');
+
+  const usernameInput = document.getElementById('regUsernameInput');
+  const nameInput = document.getElementById('regNameInput');
+  const phoneInput = document.getElementById('regPhoneInput');
+  const emailInput = document.getElementById('regEmailInput');
+  const passwordInput = document.getElementById('regPasswordInput');
+
+  const username = usernameInput ? usernameInput.value.trim().toLowerCase() : '';
+  const name = nameInput ? nameInput.value.trim() : '';
+  const phone = phoneInput ? phoneInput.value.trim() : '';
+  const email = emailInput ? emailInput.value.trim().toLowerCase() : '';
+  const password = passwordInput ? passwordInput.value : '';
 
   if (!username || !name || !phone || !email || !password) {
-    showToast('Silakan lengkapi Username, Nama, WhatsApp, Email, dan Password.', 'warning');
+    showToast('⚠️ Silakan lengkapi Username, Nama, WhatsApp, Email, dan Password.', 'warning');
     return;
   }
 
   if (password.length < 6) {
-    showToast('Password minimal harus 6 karakter!', 'warning');
+    showToast('⚠️ Password minimal harus 6 karakter!', 'warning');
     return;
   }
 
-  // Check if Username or Email already exists locally
-  const existingLocal = localUsers.find(u => u.email === email || u.username === username);
-  if (existingLocal) {
-    showToast('❌ Email atau Username ini sudah terdaftar! Silakan Login.', 'warning');
-    switchAuthTab('login');
+  if (!supabaseClient || !supabaseClient.auth) {
+    const uninitErr = '❌ Supabase Auth Client tidak terhubung. Silakan periksa koneksi.';
+    console.error(uninitErr);
+    showToast(uninitErr, 'warning');
     return;
   }
 
-  // Check Supabase Database for existing account
-  if (supabaseClient) {
-    try {
-      const { data, error } = await supabaseClient
-        .from('customers')
-        .select('*')
-        .or(`email.eq.${email},username.eq.${username}`);
+  try {
+    const redirectUrl = 'http://localhost:8080/';
 
-      if (!error && data && data.length > 0) {
-        showToast('❌ Email atau Username ini sudah terdaftar! Silakan Login.', 'warning');
-        switchAuthTab('login');
-        return;
-      }
-    } catch (err) {
-      console.error('Error checking existing customer in Supabase:', err);
-    }
-  }
+    showToast('📡 CONTACTING SUPABASE AUTH...', 'info');
+    console.log('CONTACTING SUPABASE AUTH...');
 
-  // Create User Account Record with status UNCONFIRMED
-  const newUserRecord = {
-    username,
-    name,
-    phone,
-    email,
-    password,
-    status: 'UNCONFIRMED',
-    created_at: new Date().toISOString()
-  };
-
-  // 1. Save to Local Storage
-  localUsers.push(newUserRecord);
-  localStorage.setItem('kmrd_registered_users', JSON.stringify(localUsers));
-
-  // 2. Save Customer Profile to Supabase Database (Status: UNCONFIRMED)
-  if (supabaseClient) {
-    try {
-      const { error } = await supabaseClient.from('customers').upsert([newUserRecord], { onConflict: 'email' });
-      if (error) {
-        console.error('Supabase customer register error:', error);
-        // Fallback 1: Insert without status column if missing in Supabase schema
-        const basicRecord = { username, name, phone, email, password };
-        const { error: insErr } = await supabaseClient.from('customers').insert([basicRecord]);
-        if (insErr) {
-          console.error('Supabase fallback insert error:', insErr);
-          showToast(`⚠️ Supabase DB Notice: ${insErr.message}`, 'warning');
+    // 1. Call supabaseClient.auth.signUp() and store exact result
+    const { data, error: signUpError } = await supabaseClient.auth.signUp({
+      email: email,
+      password: password,
+      options: {
+        emailRedirectTo: redirectUrl,
+        data: {
+          username: username,
+          name: name,
+          phone: phone
         }
       }
-    } catch (err) {
-      console.error('Supabase customer register exception:', err);
+    });
+
+    // 3. Handle SignUp Error
+    if (signUpError) {
+      const errCode = signUpError.code || signUpError.error_code || 'N/A';
+      const errStatus = signUpError.status || 'N/A';
+      let errMessage = signUpError.message || 'Unknown Supabase Auth Error';
+
+      if (errCode === 'over_email_send_rate_limit' || errMessage.includes('rate limit')) {
+        errMessage = 'Email rate limit exceeded (Batas pengiriman email Supabase tercapai). Silakan nonaktifkan "Confirm email" di Dashboard Supabase Auth ➔ Providers ➔ Email untuk testing gratis tanpa batas!';
+      }
+
+      console.error('SUPABASE AUTH SIGNUP ERROR:', signUpError);
+      showToast(`❌ SUPABASE AUTH ERROR [${errCode}] (Status: ${errStatus}): ${errMessage}`, 'warning');
+      return;
     }
+
+    // 8. Handle Case where data.user is null
+    if (!data || !data.user) {
+      console.error('AUTH DID NOT RETURN A USER:', data);
+      showToast(`❌ AUTH DID NOT RETURN A USER: ${JSON.stringify(data)}`, 'warning');
+      return;
+    }
+
+    // 4. Display AUTH USER CREATED
+    const authUserId = data.user.id;
+    console.log('AUTH USER CREATED:', authUserId);
+    showToast(`✅ AUTH USER CREATED: ${authUserId}`, 'info');
+
+    // 5. Perform the customers INSERT (No Password)
+    const profile = {
+      username: username,
+      name: name,
+      phone: phone,
+      email: email,
+      auth_user_id: authUserId,
+      status: 'UNCONFIRMED'
+    };
+
+    const { error: profileError } = await supabaseClient
+      .from('customers')
+      .insert(profile);
+
+    // 7. Handle Customers Insert Error
+    if (profileError) {
+      const errMsg = profileError.message || 'N/A';
+      const errCode = profileError.code || 'N/A';
+      const errDetails = profileError.details || 'N/A';
+      const errHint = profileError.hint || 'N/A';
+
+      const fullErrStr = `CUSTOMERS INSERT FAILED | Message: ${errMsg} | Code: ${errCode} | Details: ${errDetails} | Hint: ${errHint}`;
+      console.error('CUSTOMERS INSERT FAILED:', profileError);
+      showToast(`❌ ${fullErrStr}`, 'warning');
+      return;
+    }
+
+    // 2 & 6. SUCCESS ONLY WHEN BOTH AUTH SIGNUP AND CUSTOMERS INSERT SUCCEEDED
+    console.log('REGISTRATION SUCCESSFUL FOR:', email);
+    closeAuthModal();
+    openEmailVerificationNoticeModal(email);
+    showToast(`📩 Link verifikasi dikirim oleh Supabase ke ${email}`, 'success');
+
+  } catch (err) {
+    console.error('Registration Exception:', err);
+    showToast(`❌ System Error: ${err.message || err}`, 'warning');
   }
-
-  closeAuthModal();
-  openEmailVerificationNoticeModal(email);
-
-  showToast(`📩 Link verifikasi dikirim ke ${email}. Status akun: UNCONFIRMED`, 'info');
 }
 
-// Handle Customer Login (Requires Status CONFIRMED)
+// Handle Customer Login (Using Supabase Auth signInWithPassword)
 async function handleCustomerLogin(event) {
   event.preventDefault();
   const inputIdentifier = document.getElementById('loginEmailInput').value.trim().toLowerCase();
@@ -1361,69 +1369,88 @@ async function handleCustomerLogin(event) {
     return;
   }
 
-  let foundUser = null;
+  let targetEmail = inputIdentifier;
 
-  // 1. Query Supabase Database first for cross-device access
-  if (supabaseClient) {
-    try {
-      const { data, error } = await supabaseClient
-        .from('customers')
-        .select('*')
-        .or(`email.eq.${inputIdentifier},username.eq.${inputIdentifier}`);
-
-      if (!error && data && data.length > 0) {
-        const matched = data.find(u => (u.email === inputIdentifier || u.username === inputIdentifier) && u.password === inputPassword);
-        if (matched) {
-          foundUser = matched;
-        }
-      } else if (error) {
-        console.error('Supabase login query error:', error);
-      }
-    } catch (err) {
-      console.error('Supabase customer login exception:', err);
+  // Resolve username to email if identifier doesn't contain '@'
+  if (!inputIdentifier.includes('@')) {
+    const localMatch = localUsers.find(u => u.username === inputIdentifier);
+    if (localMatch) {
+      targetEmail = localMatch.email;
+    } else if (supabaseClient) {
+      try {
+        const { data } = await supabaseClient.from('customers').select('email').eq('username', inputIdentifier).single();
+        if (data && data.email) targetEmail = data.email;
+      } catch (err) {}
     }
   }
 
-  // 2. Check Local Storage backup if not found in Supabase
-  if (!foundUser) {
-    foundUser = localUsers.find(u => (u.email === inputIdentifier || u.username === inputIdentifier) && u.password === inputPassword);
+  // 1. Direct Supabase Auth Authentication
+  if (supabaseClient && supabaseClient.auth) {
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
+      email: targetEmail,
+      password: inputPassword
+    });
+
+    if (error) {
+      console.error('Supabase Auth signInWithPassword error:', error);
+      showToast(`❌ Login Gagal: ${error.message}`, 'warning');
+      return;
+    }
+
+    if (data && data.user) {
+      const uMeta = data.user.user_metadata || {};
+      currentCustomer = {
+        id: data.user.id,
+        email: data.user.email,
+        name: uMeta.name || targetEmail.split('@')[0],
+        username: uMeta.username || inputIdentifier,
+        phone: uMeta.phone || ''
+      };
+      localStorage.setItem('kmrd_customer_session', JSON.stringify(currentCustomer));
+
+      closeAuthModal();
+      renderNavAuthButtons();
+
+      const custNameInput = document.getElementById('custNameInput');
+      const custPhoneInput = document.getElementById('custPhoneInput');
+      if (custNameInput) custNameInput.value = currentCustomer.name || '';
+      if (custPhoneInput && currentCustomer.phone) custPhoneInput.value = currentCustomer.phone;
+
+      showToast(`✅ Berhasil masuk sebagai ${currentCustomer.name}!`, 'success');
+
+      if (cart.length > 0) {
+        openCheckoutModal();
+      }
+      return;
+    }
   }
 
-  // STRICT CREDENTIAL VERIFICATION: Reject if unregistered or wrong password
-  if (!foundUser) {
-    showToast('❌ Login Gagal! Email/Username atau Password salah. Silakan periksa atau Daftar Akun baru.', 'warning');
-    return;
-  }
+  // 2. Fallback for Local Mode if Supabase Auth client is not initialized
+  const localMatch = localUsers.find(u => u.email === targetEmail || u.username === inputIdentifier);
+  if (localMatch) {
+    currentCustomer = { username: localMatch.username, name: localMatch.name, phone: localMatch.phone, email: localMatch.email };
+    localStorage.setItem('kmrd_customer_session', JSON.stringify(currentCustomer));
 
-  // VERIFICATION GUARD: Reject Login if Status is UNCONFIRMED!
-  const isConfirmed = (foundUser.status === 'CONFIRMED' || foundUser.status === 'CONFIRMED_USER' || foundUser.status === 'ACTIVE');
-  if (!isConfirmed) {
-    showToast('⚠️ Akun Anda belum terverifikasi! Status di database: UNCONFIRMED. Silakan konfirmasi email Anda terlebih dahulu.', 'warning');
-    openEmailVerificationNoticeModal(foundUser.email);
-    return;
-  }
+    closeAuthModal();
+    renderNavAuthButtons();
+    showToast(`✅ Berhasil masuk sebagai ${currentCustomer.name}!`, 'success');
 
-  // Successful Login
-  currentCustomer = { username: foundUser.username, name: foundUser.name, phone: foundUser.phone, email: foundUser.email };
-  localStorage.setItem('kmrd_customer_session', JSON.stringify(currentCustomer));
-
-  closeAuthModal();
-  renderNavAuthButtons();
-
-  const custNameInput = document.getElementById('custNameInput');
-  const custPhoneInput = document.getElementById('custPhoneInput');
-  if (custNameInput) custNameInput.value = currentCustomer.name || '';
-  if (custPhoneInput && currentCustomer.phone) custPhoneInput.value = currentCustomer.phone;
-
-  showToast(`✅ Berhasil masuk sebagai ${currentCustomer.name}!`, 'success');
-
-  // Auto proceed to checkout if user has items in cart
-  if (cart.length > 0) {
-    openCheckoutModal();
+    if (cart.length > 0) {
+      openCheckoutModal();
+    }
+  } else {
+    showToast('❌ Login Gagal! Email/Username atau Password salah.', 'warning');
   }
 }
 
-function handleCustomerLogout() {
+async function handleCustomerLogout() {
+  if (supabaseClient && supabaseClient.auth) {
+    try {
+      await supabaseClient.auth.signOut();
+    } catch (err) {
+      console.error('Supabase Auth signOut error:', err);
+    }
+  }
   currentCustomer = null;
   localStorage.removeItem('kmrd_customer_session');
   renderNavAuthButtons();
@@ -2138,22 +2165,25 @@ function setupEventListeners() {
   if (cartBtn) cartBtn.addEventListener('click', () => cartBackdrop.classList.add('active'));
   if (closeCartBtn) closeCartBtn.addEventListener('click', () => cartBackdrop.classList.remove('active'));
 
-  // Close any active modal backdrop when clicking outside the modal content card
+  // Close any active modal backdrop when intentionally clicking outside the modal content card
   document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+    let mousedownTarget = null;
+    backdrop.addEventListener('mousedown', (e) => {
+      mousedownTarget = e.target;
+    });
     backdrop.addEventListener('click', (e) => {
-      if (e.target === backdrop) {
+      if (e.target === backdrop && mousedownTarget === backdrop) {
         backdrop.classList.remove('active');
       }
     });
   });
 
-  if (cartBackdrop) {
-    cartBackdrop.addEventListener('click', (e) => {
-      if (e.target === cartBackdrop) {
-        cartBackdrop.classList.remove('active');
-      }
+  // Stop click propagation inside modal cards to prevent accidental backdrop triggers
+  document.querySelectorAll('.modal-card').forEach(card => {
+    card.addEventListener('click', (e) => {
+      e.stopPropagation();
     });
-  }
+  });
 }
 
 // Quick View Modal
