@@ -7,6 +7,10 @@
     "start": "node server.js",
     "dev": "node server.js"
   },
+  "dependencies": {
+    "@supabase/ssr": "^0.5.2",
+    "@supabase/supabase-js": "^2.48.0"
+  },
   "keywords": [
     "kamerad",
     "outdoor",
