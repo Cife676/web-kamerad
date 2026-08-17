@@ -1220,12 +1220,16 @@ async function processEmailVerification(email) {
   // 1. Update in Supabase Database
   if (supabaseClient) {
     try {
-      await supabaseClient
+      const { error } = await supabaseClient
         .from('customers')
         .update({ status: 'CONFIRMED' })
         .eq('email', email.toLowerCase());
+
+      if (error) {
+        console.error('Supabase customer verification error:', error);
+      }
     } catch (err) {
-      console.error('Supabase customer verification error:', err);
+      console.error('Supabase customer verification exception:', err);
     }
   }
 
@@ -1324,9 +1328,17 @@ async function handleCustomerRegister(event) {
   // 2. Save Customer Profile to Supabase Database (Status: UNCONFIRMED)
   if (supabaseClient) {
     try {
-      await supabaseClient.from('customers').upsert([newUserRecord], { onConflict: 'email' });
+      const { error } = await supabaseClient.from('customers').upsert([newUserRecord], { onConflict: 'email' });
+      if (error) {
+        console.error('Supabase customer register error:', error);
+        const { error: insErr } = await supabaseClient.from('customers').insert([newUserRecord]);
+        if (insErr) {
+          console.error('Supabase fallback insert error:', insErr);
+          showToast(`⚠️ Supabase DB Notice: ${insErr.message}`, 'warning');
+        }
+      }
     } catch (err) {
-      console.error('Supabase customer register error:', err);
+      console.error('Supabase customer register exception:', err);
     }
   }
 
@@ -1349,11 +1361,8 @@ async function handleCustomerLogin(event) {
 
   let foundUser = null;
 
-  // 1. Check Local Registered Users List
-  foundUser = localUsers.find(u => (u.email === inputIdentifier || u.username === inputIdentifier) && u.password === inputPassword);
-
-  // 2. Check Supabase Database if not found locally
-  if (!foundUser && supabaseClient) {
+  // 1. Query Supabase Database first for cross-device access
+  if (supabaseClient) {
     try {
       const { data, error } = await supabaseClient
         .from('customers')
@@ -1365,10 +1374,17 @@ async function handleCustomerLogin(event) {
         if (matched) {
           foundUser = matched;
         }
+      } else if (error) {
+        console.error('Supabase login query error:', error);
       }
     } catch (err) {
-      console.error('Supabase customer login query error:', err);
+      console.error('Supabase customer login exception:', err);
     }
+  }
+
+  // 2. Check Local Storage backup if not found in Supabase
+  if (!foundUser) {
+    foundUser = localUsers.find(u => (u.email === inputIdentifier || u.username === inputIdentifier) && u.password === inputPassword);
   }
 
   // STRICT CREDENTIAL VERIFICATION: Reject if unregistered or wrong password
