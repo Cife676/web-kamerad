@@ -1331,7 +1331,9 @@ async function handleCustomerRegister(event) {
       const { error } = await supabaseClient.from('customers').upsert([newUserRecord], { onConflict: 'email' });
       if (error) {
         console.error('Supabase customer register error:', error);
-        const { error: insErr } = await supabaseClient.from('customers').insert([newUserRecord]);
+        // Fallback 1: Insert without status column if missing in Supabase schema
+        const basicRecord = { username, name, phone, email, password };
+        const { error: insErr } = await supabaseClient.from('customers').insert([basicRecord]);
         if (insErr) {
           console.error('Supabase fallback insert error:', insErr);
           showToast(`⚠️ Supabase DB Notice: ${insErr.message}`, 'warning');
